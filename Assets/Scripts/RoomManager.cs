@@ -16,22 +16,30 @@ public class RoomManager : MonoBehaviour
     }
 
     private void Start()
-    {
-        currentRoom = startingRoom;
-        ActivateOnly(currentRoom);
-    }
+{
+    currentRoom = startingRoom;
+    ActivateOnly(currentRoom);
+
+    // NUOVO
+    enemiesRemaining = CountEnemiesInRoom(currentRoom);
+    SetDoorsActive(currentRoom, enemiesRemaining <= 0);
+}
 
     public void GoToRoom(GameObject newRoom, Vector2 playerSpawnPosition)
-    {
-        ActivateOnly(newRoom);
-        currentRoom = newRoom;
+{
+    ActivateOnly(newRoom);
+    currentRoom = newRoom;
 
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
-        if (player != null)
-        {
-            player.transform.position = playerSpawnPosition;
-        }
+    GameObject player = GameObject.FindGameObjectWithTag("Player");
+    if (player != null)
+    {
+        player.transform.position = playerSpawnPosition;
     }
+
+    // NUOVO: controlla nemici nella stanza appena entrata
+    enemiesRemaining = CountEnemiesInRoom(newRoom);
+    SetDoorsActive(newRoom, enemiesRemaining <= 0);
+}
 
     private void ActivateOnly(GameObject roomToActivate)
     {
@@ -41,4 +49,41 @@ public class RoomManager : MonoBehaviour
             child.gameObject.SetActive(child.gameObject == roomToActivate);
         }
     }
+
+    private int enemiesRemaining;
+
+public void RegisterEnemyDeath()
+{
+    enemiesRemaining--;
+
+    if (enemiesRemaining <= 0)
+    {
+        SetDoorsActive(currentRoom, true);
+    }
+}
+
+private void SetDoorsActive(GameObject room, bool active)
+{
+    foreach (Transform child in room.transform)
+    {
+        if (child.CompareTag("Door"))
+        {
+            child.gameObject.SetActive(active);
+        }
+    }
+}
+
+private int CountEnemiesInRoom(GameObject room)
+{
+    int count = 0;
+    foreach (Transform child in room.transform)
+    {
+        if (child.CompareTag("Enemy"))
+        {
+            count++;
+        }
+    }
+    return count;
+}
+
 }
