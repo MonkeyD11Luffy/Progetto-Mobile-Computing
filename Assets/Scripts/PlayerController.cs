@@ -130,9 +130,14 @@ private void Fire(Vector2 direction)
 }
 
     private void Die()
+{
+    Debug.Log("Game Over");
+
+    if (GameManager.Instance != null)
     {
-        Debug.Log("Game Over");
+        GameManager.Instance.ShowGameOver();
     }
+}
 
     private void OnTriggerEnter2D(Collider2D other)
     {
