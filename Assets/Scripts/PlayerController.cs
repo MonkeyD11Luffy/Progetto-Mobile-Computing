@@ -1,4 +1,5 @@
 using UnityEngine;
+using TMPro;
 
 [RequireComponent(typeof(Rigidbody2D))]
 public class PlayerController : MonoBehaviour
@@ -15,6 +16,9 @@ public class PlayerController : MonoBehaviour
     [Header("Vita")]
     [SerializeField] private int maxHealth = 6;
     [SerializeField] private float invulnerabilityDuration = 0.8f;
+    
+    [Header("UI")]
+    [SerializeField] private TextMeshProUGUI healthText;
 
     private Rigidbody2D rb;
     private Vector2 moveInput;
@@ -28,6 +32,7 @@ public class PlayerController : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
         currentHealth = maxHealth;
+        UpdateHealthUI(); // NUOVO
     }
 
     private void Update()
@@ -112,16 +117,17 @@ private void Fire(Vector2 direction)
         if (isInvulnerable) return;
 
         currentHealth -= amount;
+        UpdateHealthUI();
         isInvulnerable = true;
         invulnerabilityTimer = invulnerabilityDuration;
 
         Debug.Log($"Player colpito. Vita rimanente: {currentHealth}");
 
         if (currentHealth <= 0)
-        {
-            Die();
-        }
+    {
+        Die();
     }
+}
 
     private void Die()
     {
@@ -135,4 +141,13 @@ private void Fire(Vector2 direction)
             TakeDamage(1);
         }
     }
+
+    private void UpdateHealthUI()
+{
+    if (healthText != null)
+    {
+        healthText.text = $"Vita: {currentHealth}/{maxHealth}";
+    }
+}
+
 }
