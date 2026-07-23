@@ -6,6 +6,9 @@ public class RoomManager : MonoBehaviour
 
     [Header("Stanze")]
     [SerializeField] private GameObject startingRoom;
+    [Header("Pickup")]
+    [SerializeField] private GameObject[] pickupPrefabs;
+    [SerializeField] [Range(0f, 1f)] private float pickupDropChance = 0.5f; // 50% di probabilità
 
     private GameObject currentRoom;
 
@@ -52,14 +55,29 @@ public class RoomManager : MonoBehaviour
 
     private int enemiesRemaining;
 
-public void RegisterEnemyDeath()
-{
+    public void RegisterEnemyDeath()
+    {
     enemiesRemaining--;
 
     if (enemiesRemaining <= 0)
     {
         SetDoorsActive(currentRoom, true);
+        SpawnRandomPickup(currentRoom);
     }
+}
+
+private void SpawnRandomPickup(GameObject room)
+{
+    if (pickupPrefabs == null || pickupPrefabs.Length == 0) return;
+
+    // Tira il dado: se il numero casuale supera la probabilità, non droppa nulla
+    if (Random.value > pickupDropChance) return;
+
+    int index = Random.Range(0, pickupPrefabs.Length);
+    GameObject chosenPickup = pickupPrefabs[index];
+
+    Vector3 spawnPosition = room.transform.position;
+    Instantiate(chosenPickup, spawnPosition, Quaternion.identity, room.transform);
 }
 
 private void SetDoorsActive(GameObject room, bool active)

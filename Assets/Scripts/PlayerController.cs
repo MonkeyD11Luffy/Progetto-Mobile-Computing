@@ -155,4 +155,25 @@ private void Fire(Vector2 direction)
     }
 }
 
+public void Heal(int amount)
+{
+    currentHealth = Mathf.Min(currentHealth + amount, maxHealth);
+    UpdateHealthUI();
+}
+
+public void ApplySpeedBoost(float multiplier, float duration)
+{
+    StartCoroutine(SpeedBoostCoroutine(multiplier, duration));
+}
+
+private System.Collections.IEnumerator SpeedBoostCoroutine(float multiplier, float duration)
+{
+    float originalSpeed = moveSpeed;
+    moveSpeed *= multiplier;
+
+    yield return new WaitForSeconds(duration);
+
+    moveSpeed = originalSpeed;
+}
+
 }

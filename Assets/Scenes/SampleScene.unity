@@ -2156,7 +2156,7 @@ Transform:
   m_GameObject: {fileID: 470697298}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: -2, z: 0}
   m_LocalScale: {x: 2, y: 2, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3066,7 +3066,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DoorTrigger
   targetRoom: {fileID: 29436066}
-  playerSpawnPosition: {x: 0, y: -2.8}
+  playerSpawnPosition: {x: 0, y: 2.8}
 --- !u!1 &562820876
 GameObject:
   m_ObjectHideFlags: 0
@@ -5452,6 +5452,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoomManager
   startingRoom: {fileID: 1767393748}
+  pickupPrefabs:
+  - {fileID: 8418453763854678195, guid: e8f7db63240788b9191b1dca3580569b, type: 3}
+  - {fileID: 703929905639435905, guid: 1a87fb19f76ae1c6d8429c40cae190f0, type: 3}
 --- !u!4 &1684176010
 Transform:
   m_ObjectHideFlags: 0
@@ -7410,7 +7413,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DoorTrigger
   targetRoom: {fileID: 1686258021}
-  playerSpawnPosition: {x: 0, y: -2.8}
+  playerSpawnPosition: {x: 0, y: -2.9}
 --- !u!1 &2139975770
 GameObject:
   m_ObjectHideFlags: 0
