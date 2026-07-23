@@ -4,6 +4,15 @@ using TMPro;
 [RequireComponent(typeof(Rigidbody2D))]
 public class PlayerController : MonoBehaviour
 {
+
+    [Header("Bombe")]
+    [SerializeField] private GameObject bombPrefab;
+    [SerializeField] private int maxBombs = 3;
+    [SerializeField] private float bombCooldown = 1f;
+
+    private int currentBombs;
+    private float bombTimer;
+
     [Header("Movimento")]
     [SerializeField] private float moveSpeed = 5f;
 
@@ -32,6 +41,7 @@ public class PlayerController : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
         currentHealth = maxHealth;
+        currentBombs = maxBombs;
         UpdateHealthUI(); // NUOVO
     }
 
@@ -39,6 +49,7 @@ public class PlayerController : MonoBehaviour
     {
         HandleInput();
         HandleFiring();
+        HandleBombPlacement();
         HandleInvulnerability();
     }
 
@@ -71,6 +82,25 @@ private void HandleFiring()
         Fire(aimDirection);
         fireTimer = fireCooldown;
     }
+}
+
+private void HandleBombPlacement()
+{
+    bombTimer -= Time.deltaTime;
+
+    if (Input.GetKeyDown(KeyCode.E) && bombTimer <= 0f && currentBombs > 0)
+    {
+        PlaceBomb();
+        bombTimer = bombCooldown;
+    }
+}
+
+private void PlaceBomb()
+{
+    if (bombPrefab == null) return;
+
+    Instantiate(bombPrefab, transform.position, Quaternion.identity);
+    currentBombs--;
 }
 
 private Vector2 GetCardinalAimDirection()
@@ -159,6 +189,11 @@ public void Heal(int amount)
 {
     currentHealth = Mathf.Min(currentHealth + amount, maxHealth);
     UpdateHealthUI();
+}
+
+public void AddBomb(int amount)
+{
+    currentBombs = Mathf.Min(currentBombs + amount, maxBombs);
 }
 
 public void ApplySpeedBoost(float multiplier, float duration)

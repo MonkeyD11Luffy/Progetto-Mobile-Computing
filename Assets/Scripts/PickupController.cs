@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class PickupController : MonoBehaviour
 {
-    public enum PickupType { Heal, SpeedBoost }
+    public enum PickupType { Heal, SpeedBoost, Bomb }
 
     [Header("Tipo di potenziamento")]
     [SerializeField] private PickupType pickupType;
@@ -13,6 +13,9 @@ public class PickupController : MonoBehaviour
     [Header("Valori Speed Boost")]
     [SerializeField] private float speedMultiplier = 1.5f;
     [SerializeField] private float boostDuration = 5f;
+
+    [Header("Valori Bomb")]
+    [SerializeField] private int bombAmount = 1;
 
     private void OnTriggerEnter2D(Collider2D other)
     {
@@ -29,6 +32,10 @@ public class PickupController : MonoBehaviour
 
             case PickupType.SpeedBoost:
                 playerController.ApplySpeedBoost(speedMultiplier, boostDuration);
+                break;
+
+            case PickupType.Bomb:
+                playerController.AddBomb(bombAmount);
                 break;
         }
 
