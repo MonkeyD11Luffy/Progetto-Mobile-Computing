@@ -21,6 +21,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private Transform firePoint;
     [SerializeField] private float projectileSpeed = 10f;
     [SerializeField] private float fireCooldown = 0.3f;
+    [SerializeField] private int projectileDamage = 1;
 
     [Header("Vita")]
     [SerializeField] private int maxHealth = 6;
@@ -120,6 +121,13 @@ private void Fire(Vector2 direction)
     }
 
     GameObject projectile = Instantiate(projectilePrefab, firePoint.position, Quaternion.identity);
+    
+    ProjectileController projController = projectile.GetComponent<ProjectileController>();
+    if (projController != null)
+    {
+        projController.SetDamage(projectileDamage);
+    }
+
     Rigidbody2D projRb = projectile.GetComponent<Rigidbody2D>();
     if (projRb != null)
     {
@@ -189,6 +197,28 @@ public void Heal(int amount)
 {
     currentHealth = Mathf.Min(currentHealth + amount, maxHealth);
     UpdateHealthUI();
+}
+
+public void IncreaseMaxHealth(int amount)
+{
+    maxHealth += amount;
+    currentHealth += amount;
+    UpdateHealthUI();
+}
+
+public void IncreaseDamage(int amount)
+{
+    projectileDamage += amount;
+}
+
+public void IncreaseSpeed(float amount)
+{
+    moveSpeed += amount;
+}
+
+public void DecreaseFireCooldown(float amount)
+{
+    fireCooldown = Mathf.Max(0.05f, fireCooldown - amount); // non scende mai sotto un minimo, altrimenti spari a raffica infinita
 }
 
 public void AddBomb(int amount)

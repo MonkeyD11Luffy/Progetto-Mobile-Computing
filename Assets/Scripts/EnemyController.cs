@@ -39,15 +39,6 @@ public class EnemyController : MonoBehaviour
         rb.linearVelocity = direction * moveSpeed;
     }
 
-    private void OnTriggerEnter2D(Collider2D other)
-    {
-        // Colpito da un proiettile del player
-        if (other.CompareTag("PlayerProjectile"))
-        {
-            TakeDamage(1);
-            Destroy(other.gameObject);
-        }
-    }
 
  private void OnCollisionEnter2D(Collision2D collision)
 {

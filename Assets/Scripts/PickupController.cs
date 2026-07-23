@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class PickupController : MonoBehaviour
 {
-    public enum PickupType { Heal, SpeedBoost, Bomb }
+    public enum PickupType { Heal, SpeedBoost, Bomb, MaxHealthUp, DamageUp, SpeedUp, FireRateUp }
 
     [Header("Tipo di potenziamento")]
     [SerializeField] private PickupType pickupType;
@@ -16,6 +16,12 @@ public class PickupController : MonoBehaviour
 
     [Header("Valori Bomb")]
     [SerializeField] private int bombAmount = 1;
+
+    [Header("Valori Potenziamenti Permanenti")]
+    [SerializeField] private int maxHealthIncrease = 2;
+    [SerializeField] private int damageIncrease = 1;
+    [SerializeField] private float speedIncrease = 1f;
+    [SerializeField] private float fireRateIncrease = 0.05f;
 
     private void OnTriggerEnter2D(Collider2D other)
     {
@@ -37,6 +43,23 @@ public class PickupController : MonoBehaviour
             case PickupType.Bomb:
                 playerController.AddBomb(bombAmount);
                 break;
+
+            case PickupType.MaxHealthUp:
+                playerController.IncreaseMaxHealth(maxHealthIncrease);
+                break;
+
+            case PickupType.DamageUp:
+                playerController.IncreaseDamage(damageIncrease);
+                break;
+
+            case PickupType.SpeedUp:
+                playerController.IncreaseSpeed(speedIncrease);
+                break;
+
+
+            case PickupType.FireRateUp:
+    playerController.DecreaseFireCooldown(fireRateIncrease);
+    break;
         }
 
         Destroy(gameObject);

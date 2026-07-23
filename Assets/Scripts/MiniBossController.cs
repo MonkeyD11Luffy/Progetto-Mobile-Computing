@@ -137,12 +137,13 @@ public class MinibossController : MonoBehaviour
     }
 
     private void Die()
+{
+    if (RoomManager.Instance != null)
     {
-        if (RoomManager.Instance != null)
-        {
-            RoomManager.Instance.RegisterEnemyDeath();
-        }
-
-        Destroy(gameObject);
+        RoomManager.Instance.RegisterEnemyDeath();
+        RoomManager.Instance.SpawnRandomPermanentUpgrade(transform.position, transform.root.gameObject);
     }
+
+    Destroy(gameObject);
+}
 }

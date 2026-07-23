@@ -4,6 +4,9 @@ public class RoomManager : MonoBehaviour
 {
     public static RoomManager Instance;
 
+
+    [Header("Potenziamenti Permanenti")]
+    [SerializeField] private GameObject[] permanentUpgradePrefabs;
     [Header("Stanze")]
     [SerializeField] private GameObject startingRoom;
     [Header("Pickup")]
@@ -17,6 +20,16 @@ public class RoomManager : MonoBehaviour
         // Singleton semplice: un solo RoomManager nella scena
         Instance = this;
     }
+
+public void SpawnRandomPermanentUpgrade(Vector3 position, GameObject parentRoom)
+{
+    if (permanentUpgradePrefabs == null || permanentUpgradePrefabs.Length == 0) return;
+
+    int index = Random.Range(0, permanentUpgradePrefabs.Length);
+    GameObject chosenUpgrade = permanentUpgradePrefabs[index];
+
+    Instantiate(chosenUpgrade, position, Quaternion.identity, parentRoom.transform);
+}
 
     private void Start()
 {
@@ -58,6 +71,7 @@ public class RoomManager : MonoBehaviour
     public void RegisterEnemyDeath()
     {
     enemiesRemaining--;
+    Debug.Log($"Nemico morto. Nemici rimanenti: {enemiesRemaining}");
 
     if (enemiesRemaining <= 0)
     {

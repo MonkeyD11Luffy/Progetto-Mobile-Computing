@@ -9,23 +9,29 @@ public class SecretWall : MonoBehaviour
     private bool isRevealed = false;
 
     public void Destroy()
+{
+    if (isRevealed) return;
+
+    isRevealed = true;
+
+    Collider2D col = GetComponent<Collider2D>();
+    if (col != null)
     {
-        if (isRevealed) return; // evita di rifare tutto se colpito più volte
-
-        isRevealed = true;
-
-        Collider2D col = GetComponent<Collider2D>();
-        if (col != null)
-        {
-            col.isTrigger = true;
-        }
-
-        SpriteRenderer sr = GetComponent<SpriteRenderer>();
-        if (sr != null)
-        {
-            sr.color = new Color(sr.color.r, sr.color.g, sr.color.b, 0.3f);
-        }
+        col.isTrigger = true;
     }
+
+    SpriteRenderer sr = GetComponent<SpriteRenderer>();
+    if (sr != null)
+    {
+        sr.color = new Color(sr.color.r, sr.color.g, sr.color.b, 0.3f);
+    }
+
+    // Spawna un potenziamento casuale al centro della stanza segreta
+    if (RoomManager.Instance != null && targetRoom != null)
+    {
+        RoomManager.Instance.SpawnRandomPermanentUpgrade(targetRoom.transform.position, targetRoom);
+    }
+}
 
     private void OnTriggerEnter2D(Collider2D other)
     {
