@@ -11,10 +11,10 @@ public class MinibossController : MonoBehaviour
     [Header("Sparo")]
     [SerializeField] private GameObject projectilePrefab;
     [SerializeField] private float projectileSpeed = 5f;
-    [SerializeField] private int projectilesPerBurst = 5; // raffica ridotta rispetto a un boss finale
+    [SerializeField] private int projectilesPerBurst = 5;
 
     [Header("Vita")]
-    [SerializeField] private int maxHealth = 8; // meno vita di un boss finale
+    [SerializeField] private int maxHealth = 8;
 
     private Rigidbody2D rb;
     private Transform player;
@@ -95,15 +95,6 @@ public class MinibossController : MonoBehaviour
         }
     }
 
-    private void OnTriggerEnter2D(Collider2D other)
-    {
-        if (other.CompareTag("PlayerProjectile"))
-        {
-            TakeDamage(1);
-            Destroy(other.gameObject);
-        }
-    }
-
     private void OnCollisionEnter2D(Collision2D collision)
     {
         TryDamagePlayer(collision.gameObject);
@@ -137,13 +128,13 @@ public class MinibossController : MonoBehaviour
     }
 
     private void Die()
-{
-    if (RoomManager.Instance != null)
     {
-        RoomManager.Instance.RegisterEnemyDeath();
-        RoomManager.Instance.SpawnRandomPermanentUpgrade(transform.position, transform.root.gameObject);
-    }
+        if (RoomManager.Instance != null)
+        {
+            RoomManager.Instance.RegisterEnemyDeath();
+            RoomManager.Instance.SpawnRandomPermanentUpgrade(transform.position, transform.parent.gameObject);
+        }
 
-    Destroy(gameObject);
-}
+        Destroy(gameObject);
+    }
 }

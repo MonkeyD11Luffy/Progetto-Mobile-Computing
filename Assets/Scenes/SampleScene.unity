@@ -3220,6 +3220,7 @@ MonoBehaviour:
   firePoint: {fileID: 1341674947}
   projectileSpeed: 10
   fireCooldown: 0.3
+  projectileDamage: 1
   maxHealth: 6
   invulnerabilityDuration: 0.8
   healthText: {fileID: 403848173}
@@ -6072,6 +6073,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9aedc7b943122a23b8eceade06d7da2c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoomManager
+  permanentUpgradePrefabs:
+  - {fileID: 6885976460222481655, guid: 218a389f7a9683c759a7891b1756d205, type: 3}
+  - {fileID: 7961527381625162984, guid: db8a8cb783fb84b48b9fbed0aa1bc7a5, type: 3}
+  - {fileID: 8353547883824028980, guid: 60f935c9b89aa7c13affee58a25314f4, type: 3}
+  - {fileID: 1457001539114946795, guid: d8b126b56322883079bc9a39fb60ba9d, type: 3}
   startingRoom: {fileID: 1767393748}
   pickupPrefabs:
   - {fileID: 8418453763854678195, guid: e8f7db63240788b9191b1dca3580569b, type: 3}

@@ -177,14 +177,6 @@ private void Fire(Vector2 direction)
     }
 }
 
-    private void OnTriggerEnter2D(Collider2D other)
-    {
-        if (other.CompareTag("Enemy") || other.CompareTag("EnemyProjectile"))
-        {
-            TakeDamage(1);
-        }
-    }
-
     private void UpdateHealthUI()
 {
     if (healthText != null)

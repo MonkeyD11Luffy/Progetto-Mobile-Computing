@@ -39,28 +39,27 @@ public class EnemyController : MonoBehaviour
         rb.linearVelocity = direction * moveSpeed;
     }
 
-
- private void OnCollisionEnter2D(Collision2D collision)
-{
-    TryDamagePlayer(collision.gameObject);
-}
-
-private void OnCollisionStay2D(Collision2D collision)
-{
-    TryDamagePlayer(collision.gameObject);
-}
-
-private void TryDamagePlayer(GameObject other)
-{
-    if (other.CompareTag("Player"))
+    private void OnCollisionEnter2D(Collision2D collision)
     {
-        PlayerController playerController = other.GetComponent<PlayerController>();
-        if (playerController != null)
+        TryDamagePlayer(collision.gameObject);
+    }
+
+    private void OnCollisionStay2D(Collision2D collision)
+    {
+        TryDamagePlayer(collision.gameObject);
+    }
+
+    private void TryDamagePlayer(GameObject other)
+    {
+        if (other.CompareTag("Player"))
         {
-            playerController.TakeDamage(contactDamage);
+            PlayerController playerController = other.GetComponent<PlayerController>();
+            if (playerController != null)
+            {
+                playerController.TakeDamage(contactDamage);
+            }
         }
     }
-}
 
     private void TakeDamage(int amount)
     {
@@ -73,13 +72,12 @@ private void TryDamagePlayer(GameObject other)
     }
 
     private void Die()
-{
-    if (RoomManager.Instance != null)
     {
-        RoomManager.Instance.RegisterEnemyDeath();
+        if (RoomManager.Instance != null)
+        {
+            RoomManager.Instance.RegisterEnemyDeath();
+        }
+
+        Destroy(gameObject);
     }
-
-    Destroy(gameObject);
-}
-
 }

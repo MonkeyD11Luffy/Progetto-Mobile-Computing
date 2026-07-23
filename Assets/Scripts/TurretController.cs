@@ -58,15 +58,6 @@ public class TurretController : MonoBehaviour
         projectile.transform.rotation = Quaternion.Euler(0, 0, angle);
     }
 
-    private void OnTriggerEnter2D(Collider2D other)
-    {
-        if (other.CompareTag("PlayerProjectile"))
-        {
-            TakeDamage(1);
-            Destroy(other.gameObject);
-        }
-    }
-
     private void TakeDamage(int amount)
     {
         currentHealth -= amount;
