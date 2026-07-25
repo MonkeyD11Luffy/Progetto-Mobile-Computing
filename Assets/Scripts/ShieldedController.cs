@@ -21,7 +21,7 @@ public class ShieldedController : MonoBehaviour
     private Transform player;
     private int currentHealth;
     private Vector2 shieldDirection = Vector2.right;
-
+    private bool isDead = false;
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -91,14 +91,17 @@ public class ShieldedController : MonoBehaviour
 
     // Chiamato via SendMessage da ProjectileController e BombController
     private void TakeDamage(int amount)
-    {
-        currentHealth -= amount;
+{
+    if (isDead) return;
 
-        if (currentHealth <= 0)
-        {
-            Die();
-        }
+    currentHealth -= amount;
+
+    if (currentHealth <= 0)
+    {
+        isDead = true;
+        Die();
     }
+}
 
     // Il proiettile chiede se il colpo è stato parato, prima di infliggere danno
     public bool IsBlocked(Vector2 hitPosition)

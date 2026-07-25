@@ -20,7 +20,7 @@ public class SplitterController : MonoBehaviour
     private Rigidbody2D rb;
     private Transform player;
     private int currentHealth;
-
+    private bool isDead = false;
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -67,14 +67,17 @@ public class SplitterController : MonoBehaviour
     }
 
     private void TakeDamage(int amount)
-    {
-        currentHealth -= amount;
+{
+    if (isDead) return;
 
-        if (currentHealth <= 0)
-        {
-            Die();
-        }
+    currentHealth -= amount;
+
+    if (currentHealth <= 0)
+    {
+        isDead = true;
+        Die();
     }
+}
 
     private void Die()
     {

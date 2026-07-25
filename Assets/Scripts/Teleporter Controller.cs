@@ -25,7 +25,7 @@ public class TeleporterController : MonoBehaviour
     private Collider2D col;
     private Transform player;
     private int currentHealth;
-
+    private bool isDead = false;
     private enum TeleporterState { Idle, Vanishing }
     private TeleporterState currentState;
     private float stateTimer;
@@ -131,14 +131,17 @@ public class TeleporterController : MonoBehaviour
     }
 
     private void TakeDamage(int amount)
-    {
-        currentHealth -= amount;
+{
+    if (isDead) return;
 
-        if (currentHealth <= 0)
-        {
-            Die();
-        }
+    currentHealth -= amount;
+
+    if (currentHealth <= 0)
+    {
+        isDead = true;
+        Die();
     }
+}
 
     private void Die()
     {

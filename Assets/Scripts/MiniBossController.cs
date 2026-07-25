@@ -19,7 +19,7 @@ public class MinibossController : MonoBehaviour
     private Rigidbody2D rb;
     private Transform player;
     private int currentHealth;
-
+    private bool isDead = false;
     private enum BossState { Moving, Pausing, Attacking }
     private BossState currentState;
     private float stateTimer;
@@ -118,14 +118,17 @@ public class MinibossController : MonoBehaviour
     }
 
     private void TakeDamage(int amount)
-    {
-        currentHealth -= amount;
+{
+    if (isDead) return;
 
-        if (currentHealth <= 0)
-        {
-            Die();
-        }
+    currentHealth -= amount;
+
+    if (currentHealth <= 0)
+    {
+        isDead = true;
+        Die();
     }
+}
 
     private void Die()
     {

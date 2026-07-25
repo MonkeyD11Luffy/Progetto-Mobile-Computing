@@ -5,6 +5,7 @@ public class ProjectileController : MonoBehaviour
     [SerializeField] private float lifetime = 3f;
 
     private int damage = 1;
+    private bool piercing = false;
 
     private void Start()
     {
@@ -16,20 +17,28 @@ public class ProjectileController : MonoBehaviour
         damage = amount;
     }
 
-    private void OnTriggerEnter2D(Collider2D other)
-{
-    if (other.CompareTag("Enemy"))
+    public void SetPiercing(bool value)
     {
-        // Se il nemico ha uno scudo, controlla se il colpo arriva dal lato protetto
-        ShieldedController shielded = other.GetComponent<ShieldedController>();
-        if (shielded != null && shielded.IsBlocked(transform.position))
-        {
-            Destroy(gameObject); // il proiettile si distrugge ma non fa danno
-            return;
-        }
-
-        other.gameObject.SendMessage("TakeDamage", damage, SendMessageOptions.DontRequireReceiver);
-        Destroy(gameObject);
+        piercing = value;
     }
-}
+
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.CompareTag("Enemy"))
+        {
+            ShieldedController shielded = other.GetComponent<ShieldedController>();
+            if (shielded != null && shielded.IsBlocked(transform.position))
+            {
+                Destroy(gameObject); // lo scudo ferma anche i proiettili perforanti
+                return;
+            }
+
+            other.gameObject.SendMessage("TakeDamage", damage, SendMessageOptions.DontRequireReceiver);
+
+            if (!piercing)
+            {
+                Destroy(gameObject);
+            }
+        }
+    }
 }

@@ -4,37 +4,48 @@ using TMPro;
 [RequireComponent(typeof(Rigidbody2D))]
 public class PlayerController : MonoBehaviour
 {
+    [Header("Movimento")]
+    [SerializeField] private float moveSpeed = 5f;
+
+    [Header("Sparo")]
+    [SerializeField] private GameObject projectilePrefab;
+    [SerializeField] private float projectileSpeed = 10f;
+    [SerializeField] private float fireCooldown = 0.3f;
+    [SerializeField] private int projectileDamage = 1;
+    [SerializeField] private float firePointDistance = 0.5f; // quanto avanti al player parte il colpo4
+
+    [Header("Armi")]
+    [SerializeField] private float spreadAngle = 20f;
+    [SerializeField] private float spreadCooldownMult = 1.6f;
+    [SerializeField] private float pierceCooldownMult = 2f;
+
+    [Header("Corpo a corpo")]
+    [SerializeField] private float meleeRange = 1.1f;
+    [SerializeField] private float meleeArc = 0.3f;
+    [SerializeField] private int meleeDamageMult = 2;
+    [SerializeField] private float meleeCooldownMult = 0.6f;
 
     [Header("Bombe")]
     [SerializeField] private GameObject bombPrefab;
     [SerializeField] private int maxBombs = 3;
     [SerializeField] private float bombCooldown = 1f;
 
-    private int currentBombs;
-    private float bombTimer;
-
-    [Header("Movimento")]
-    [SerializeField] private float moveSpeed = 5f;
-
-    [Header("Sparo")]
-    [SerializeField] private GameObject projectilePrefab;
-    [SerializeField] private Transform firePoint;
-    [SerializeField] private float projectileSpeed = 10f;
-    [SerializeField] private float fireCooldown = 0.3f;
-    [SerializeField] private int projectileDamage = 1;
-
     [Header("Vita")]
     [SerializeField] private int maxHealth = 6;
     [SerializeField] private float invulnerabilityDuration = 0.8f;
-    
+
     [Header("UI")]
     [SerializeField] private TextMeshProUGUI healthText;
 
+    private enum WeaponType { Single, Spread, Piercing, Melee }
+    private WeaponType currentWeapon = WeaponType.Single;
+
     private Rigidbody2D rb;
     private Vector2 moveInput;
-    private Vector2 lastMoveDirection = Vector2.down;
     private float fireTimer;
     private int currentHealth;
+    private int currentBombs;
+    private float bombTimer;
     private bool isInvulnerable;
     private float invulnerabilityTimer;
 
@@ -43,12 +54,13 @@ public class PlayerController : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         currentHealth = maxHealth;
         currentBombs = maxBombs;
-        UpdateHealthUI(); // NUOVO
+        UpdateHealthUI();
     }
 
     private void Update()
     {
         HandleInput();
+        HandleWeaponSwitch();
         HandleFiring();
         HandleBombPlacement();
         HandleInvulnerability();
@@ -59,73 +71,110 @@ public class PlayerController : MonoBehaviour
         rb.linearVelocity = moveInput * moveSpeed;
     }
 
-private void HandleInput()
-{
-    float x = 0f;
-    float y = 0f;
-
-    if (Input.GetKey(KeyCode.D)) x = 1f;
-    if (Input.GetKey(KeyCode.A)) x = -1f;
-    if (Input.GetKey(KeyCode.W)) y = 1f;
-    if (Input.GetKey(KeyCode.S)) y = -1f;
-
-    moveInput = new Vector2(x, y).normalized;
-}
-
-private void HandleFiring()
-{
-    fireTimer -= Time.deltaTime;
-
-    Vector2 aimDirection = GetCardinalAimDirection();
-
-    if (aimDirection != Vector2.zero && fireTimer <= 0f)
+    private void HandleInput()
     {
-        Fire(aimDirection);
-        fireTimer = fireCooldown;
+        float x = 0f;
+        float y = 0f;
+
+        if (Input.GetKey(KeyCode.D)) x = 1f;
+        if (Input.GetKey(KeyCode.A)) x = -1f;
+        if (Input.GetKey(KeyCode.W)) y = 1f;
+        if (Input.GetKey(KeyCode.S)) y = -1f;
+
+        moveInput = new Vector2(x, y).normalized;
     }
-}
 
-private void HandleBombPlacement()
-{
-    bombTimer -= Time.deltaTime;
-
-    if (Input.GetKeyDown(KeyCode.E) && bombTimer <= 0f && currentBombs > 0)
+    private void HandleWeaponSwitch()
     {
-        PlaceBomb();
-        bombTimer = bombCooldown;
+        if (!Input.GetKeyDown(KeyCode.Q)) return;
+
+        currentWeapon = currentWeapon switch
+        {
+            WeaponType.Single => WeaponType.Spread,
+            WeaponType.Spread => WeaponType.Piercing,
+            WeaponType.Piercing => WeaponType.Melee,
+            _ => WeaponType.Single
+        };
+
+        Debug.Log($"Arma attiva: {currentWeapon}");
     }
-}
 
-private void PlaceBomb()
-{
-    if (bombPrefab == null) return;
-
-    Instantiate(bombPrefab, transform.position, Quaternion.identity);
-    currentBombs--;
-}
-
-private Vector2 GetCardinalAimDirection()
-{
-    if (Input.GetKey(KeyCode.UpArrow)) return Vector2.up;
-    if (Input.GetKey(KeyCode.DownArrow)) return Vector2.down;
-    if (Input.GetKey(KeyCode.LeftArrow)) return Vector2.left;
-    if (Input.GetKey(KeyCode.RightArrow)) return Vector2.right;
-    return Vector2.zero;
-}
-private void Fire(Vector2 direction)
-{
-    if (projectilePrefab == null || firePoint == null)
+    private float GetCurrentCooldown()
     {
-        Debug.LogWarning("Assegna projectilePrefab e firePoint nell'Inspector.");
+        return currentWeapon switch
+        {
+            WeaponType.Spread => fireCooldown * spreadCooldownMult,
+            WeaponType.Piercing => fireCooldown * pierceCooldownMult,
+            WeaponType.Melee => fireCooldown * meleeCooldownMult,
+            _ => fireCooldown
+        };
+    }
+
+    private void HandleFiring()
+    {
+        fireTimer -= Time.deltaTime;
+
+        Vector2 aimDirection = GetCardinalAimDirection();
+
+        if (aimDirection != Vector2.zero && fireTimer <= 0f)
+        {
+            Fire(aimDirection);
+            fireTimer = GetCurrentCooldown();
+        }
+    }
+
+    private Vector2 GetCardinalAimDirection()
+    {
+        if (Input.GetKey(KeyCode.UpArrow)) return Vector2.up;
+        if (Input.GetKey(KeyCode.DownArrow)) return Vector2.down;
+        if (Input.GetKey(KeyCode.LeftArrow)) return Vector2.left;
+        if (Input.GetKey(KeyCode.RightArrow)) return Vector2.right;
+        return Vector2.zero;
+    }
+
+    private void Fire(Vector2 direction)
+{
+    if (currentWeapon == WeaponType.Melee)
+    {
+        MeleeAttack(direction);
         return;
     }
 
-    GameObject projectile = Instantiate(projectilePrefab, firePoint.position, Quaternion.identity);
-    
+    if (projectilePrefab == null)
+    {
+        Debug.LogWarning("Assegna projectilePrefab nell'Inspector.");
+        return;
+    }
+
+    // La bocca di fuoco ruota con la direzione di mira, così il ventaglio resta simmetrico
+    Vector2 origin = (Vector2)transform.position + direction * firePointDistance;
+
+    switch (currentWeapon)
+    {
+        case WeaponType.Single:
+            SpawnProjectile(origin, direction, false);
+            break;
+
+        case WeaponType.Spread:
+            SpawnProjectile(origin, direction, false);
+            SpawnProjectile(origin, Rotate(direction, spreadAngle), false);
+            SpawnProjectile(origin, Rotate(direction, -spreadAngle), false);
+            break;
+
+        case WeaponType.Piercing:
+            SpawnProjectile(origin, direction, true);
+            break;
+    }
+}
+    private void SpawnProjectile(Vector2 origin, Vector2 direction, bool piercing)
+{
+    GameObject projectile = Instantiate(projectilePrefab, origin, Quaternion.identity);
+
     ProjectileController projController = projectile.GetComponent<ProjectileController>();
     if (projController != null)
     {
         projController.SetDamage(projectileDamage);
+        projController.SetPiercing(piercing);
     }
 
     Rigidbody2D projRb = projectile.GetComponent<Rigidbody2D>();
@@ -138,6 +187,64 @@ private void Fire(Vector2 direction)
     projectile.transform.rotation = Quaternion.Euler(0, 0, angle);
 }
 
+    private Vector2 Rotate(Vector2 direction, float degrees)
+    {
+        float rad = degrees * Mathf.Deg2Rad;
+        float cos = Mathf.Cos(rad);
+        float sin = Mathf.Sin(rad);
+
+        return new Vector2(
+            direction.x * cos - direction.y * sin,
+            direction.x * sin + direction.y * cos
+        );
+    }
+
+    private void MeleeAttack(Vector2 direction)
+    {
+        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, meleeRange);
+
+        foreach (Collider2D hit in hits)
+        {
+            if (hit.CompareTag("EnemyProjectile"))
+            {
+                Vector2 toProj = ((Vector2)hit.transform.position - (Vector2)transform.position).normalized;
+                if (Vector2.Dot(toProj, direction) >= meleeArc)
+                {
+                    Destroy(hit.gameObject);
+                }
+                continue;
+            }
+
+            if (!hit.CompareTag("Enemy")) continue;
+
+            Vector2 toTarget = ((Vector2)hit.transform.position - (Vector2)transform.position).normalized;
+            if (Vector2.Dot(toTarget, direction) < meleeArc) continue;
+
+            ShieldedController shielded = hit.GetComponent<ShieldedController>();
+            if (shielded != null && shielded.IsBlocked(transform.position)) continue;
+
+            hit.gameObject.SendMessage("TakeDamage", projectileDamage * meleeDamageMult, SendMessageOptions.DontRequireReceiver);
+        }
+    }
+
+    private void HandleBombPlacement()
+    {
+        bombTimer -= Time.deltaTime;
+
+        if (Input.GetKeyDown(KeyCode.E) && bombTimer <= 0f && currentBombs > 0)
+        {
+            PlaceBomb();
+            bombTimer = bombCooldown;
+        }
+    }
+
+    private void PlaceBomb()
+    {
+        if (bombPrefab == null) return;
+
+        Instantiate(bombPrefab, transform.position, Quaternion.identity);
+        currentBombs--;
+    }
 
     private void HandleInvulnerability()
     {
@@ -162,75 +269,74 @@ private void Fire(Vector2 direction)
         Debug.Log($"Player colpito. Vita rimanente: {currentHealth}");
 
         if (currentHealth <= 0)
-    {
-        Die();
+        {
+            Die();
+        }
     }
-}
 
     private void Die()
-{
-    Debug.Log("Game Over");
-
-    if (GameManager.Instance != null)
     {
-        GameManager.Instance.ShowGameOver();
+        Debug.Log("Game Over");
+
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.ShowGameOver();
+        }
     }
-}
 
     private void UpdateHealthUI()
-{
-    if (healthText != null)
     {
-        healthText.text = $"Vita: {currentHealth}/{maxHealth}";
+        if (healthText != null)
+        {
+            healthText.text = $"Vita: {currentHealth}/{maxHealth}";
+        }
     }
-}
 
-public void Heal(int amount)
-{
-    currentHealth = Mathf.Min(currentHealth + amount, maxHealth);
-    UpdateHealthUI();
-}
+    public void Heal(int amount)
+    {
+        currentHealth = Mathf.Min(currentHealth + amount, maxHealth);
+        UpdateHealthUI();
+    }
 
-public void IncreaseMaxHealth(int amount)
-{
-    maxHealth += amount;
-    currentHealth += amount;
-    UpdateHealthUI();
-}
+    public void IncreaseMaxHealth(int amount)
+    {
+        maxHealth += amount;
+        currentHealth += amount;
+        UpdateHealthUI();
+    }
 
-public void IncreaseDamage(int amount)
-{
-    projectileDamage += amount;
-}
+    public void IncreaseDamage(int amount)
+    {
+        projectileDamage += amount;
+    }
 
-public void IncreaseSpeed(float amount)
-{
-    moveSpeed += amount;
-}
+    public void IncreaseSpeed(float amount)
+    {
+        moveSpeed += amount;
+    }
 
-public void DecreaseFireCooldown(float amount)
-{
-    fireCooldown = Mathf.Max(0.05f, fireCooldown - amount); // non scende mai sotto un minimo, altrimenti spari a raffica infinita
-}
+    public void DecreaseFireCooldown(float amount)
+    {
+        fireCooldown = Mathf.Max(0.05f, fireCooldown - amount);
+    }
 
-public void AddBomb(int amount)
-{
-    currentBombs = Mathf.Min(currentBombs + amount, maxBombs);
-}
+    public void AddBomb(int amount)
+    {
+        currentBombs = Mathf.Min(currentBombs + amount, maxBombs);
+    }
 
-public void ApplySpeedBoost(float multiplier, float duration)
-{
-    StartCoroutine(SpeedBoostCoroutine(multiplier, duration));
-}
+    public void ApplySpeedBoost(float multiplier, float duration)
+    {
+        StartCoroutine(SpeedBoostCoroutine(multiplier, duration));
+    }
 
-private System.Collections.IEnumerator SpeedBoostCoroutine(float multiplier, float duration)
-{
-    float originalSpeed = moveSpeed;
-    moveSpeed *= multiplier;
+    private System.Collections.IEnumerator SpeedBoostCoroutine(float multiplier, float duration)
+    {
+        float originalSpeed = moveSpeed;
+        moveSpeed *= multiplier;
 
-    yield return new WaitForSeconds(duration);
+        yield return new WaitForSeconds(duration);
 
-    moveSpeed = originalSpeed;
-}
-
+        moveSpeed = originalSpeed;
+    }
 }

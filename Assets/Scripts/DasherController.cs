@@ -26,7 +26,7 @@ public class DasherController : MonoBehaviour
     private SpriteRenderer sr;
     private Transform player;
     private int currentHealth;
-
+    private bool isDead = false;
     private enum DasherState { Idle, Telegraph, Dashing }
     private DasherState currentState;
     private float stateTimer;
@@ -154,14 +154,17 @@ public class DasherController : MonoBehaviour
     }
 
     private void TakeDamage(int amount)
-    {
-        currentHealth -= amount;
+{
+    if (isDead) return;
 
-        if (currentHealth <= 0)
-        {
-            Die();
-        }
+    currentHealth -= amount;
+
+    if (currentHealth <= 0)
+    {
+        isDead = true;
+        Die();
     }
+}
 
     private void Die()
     {
