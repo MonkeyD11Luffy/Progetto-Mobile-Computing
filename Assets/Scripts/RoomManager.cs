@@ -7,6 +7,9 @@ public class RoomManager : MonoBehaviour
     [Header("Stanze")]
     [SerializeField] private GameObject startingRoom;
 
+    [Header("Vittoria")]
+    [SerializeField] private GameObject finalRoom;
+
     [Header("Pickup")]
     [SerializeField] private GameObject[] pickupPrefabs;
     [SerializeField] [Range(0f, 1f)] private float pickupDropChance = 0.5f;
@@ -47,15 +50,21 @@ public class RoomManager : MonoBehaviour
     }
 
     public void RegisterEnemyDeath()
-    {
-        enemiesRemaining--;
+{
+    enemiesRemaining--;
 
-        if (enemiesRemaining <= 0)
+    if (enemiesRemaining <= 0)
+    {
+        SetDoorsActive(currentRoom, true);
+        SpawnRandomPickup(currentRoom);
+
+        // La partita si vince ripulendo la stanza finale, non solo uccidendo il boss
+        if (currentRoom == finalRoom && GameManager.Instance != null)
         {
-            SetDoorsActive(currentRoom, true);
-            SpawnRandomPickup(currentRoom);
+            GameManager.Instance.ShowVictory();
         }
     }
+}
 
     public void RegisterEnemySpawn(int amount)
 {
