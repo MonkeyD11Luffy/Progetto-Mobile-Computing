@@ -57,6 +57,11 @@ public class RoomManager : MonoBehaviour
         }
     }
 
+    public void RegisterEnemySpawn(int amount)
+{
+    enemiesRemaining += amount;
+}
+
     public void SpawnRandomPermanentUpgrade(Vector3 position, GameObject parentRoom)
     {
         if (permanentUpgradePrefabs == null || permanentUpgradePrefabs.Length == 0) return;
