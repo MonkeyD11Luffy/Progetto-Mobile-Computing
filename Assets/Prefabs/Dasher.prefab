@@ -133,12 +133,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fbb3d98a7db3e4d16aae8accba7ae88b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DasherController
+  maxHealth: 4
+  contactDamage: 2
   idleDuration: 1.5
   telegraphDuration: 0.6
   dashDuration: 0.4
   dashSpeed: 12
-  maxHealth: 3
-  contactDamage: 1
+  idleMoveSpeed: 1
   telegraphColor: {r: 0.08830473, g: 0, b: 0.514151, a: 1}
 --- !u!61 &7007880647160766225
 BoxCollider2D:

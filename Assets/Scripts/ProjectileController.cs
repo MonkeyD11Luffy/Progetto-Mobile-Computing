@@ -22,6 +22,11 @@ public class ProjectileController : MonoBehaviour
         piercing = value;
     }
 
+    public void SetLifetime(float value)
+    {
+        lifetime = value;
+    }
+
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (other.CompareTag("Enemy"))

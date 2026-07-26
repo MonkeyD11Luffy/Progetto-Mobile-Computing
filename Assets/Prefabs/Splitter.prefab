@@ -179,9 +179,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2b4f44499938c25dd9d3ecdf2eba2f62, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SplitterController
-  moveSpeed: 1.2
-  maxHealth: 5
+  maxHealth: 8
   contactDamage: 1
+  moveSpeed: 1.2
   splitPrefab: {fileID: 9221788800551908449, guid: 5d2dc3d92c67a605094e8bf99e4b6ebd, type: 3}
   splitCount: 2
   splitSpread: 0.6

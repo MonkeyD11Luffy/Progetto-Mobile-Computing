@@ -179,7 +179,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2fecec1c43481ba81914e8ccad753f7a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BossController
-  maxHealth: 25
+  maxHealth: 40
+  contactDamage: 2
   moveSpeed: 1.2
   chargeSpeed: 9
   moveDuration: 2
@@ -191,7 +192,6 @@ MonoBehaviour:
   volleySpread: 15
   minionPrefab: {fileID: 8068514365202342125, guid: 27a5945b75ba9a124a96c016f0b75f5f, type: 3}
   minionCount: 2
-  contactDamage: 1
   phase2Color: {r: 1, g: 0.6, b: 0.2, a: 1}
   phase3Color: {r: 1, g: 0.2, b: 0.2, a: 1}
   telegraphColor: {r: 1, g: 1, b: 1, a: 1}

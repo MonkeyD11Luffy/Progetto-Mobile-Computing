@@ -179,7 +179,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 557c7f6bda20ba5b8a8fcc15348183dd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TurretController
+  maxHealth: 4
+  contactDamage: 1
   projectilePrefab: {fileID: 7843852227812731380, guid: 71c61c8e932f2578781c05cd6f9f9aec, type: 3}
   projectileSpeed: 6
   fireInterval: 2
-  maxHealth: 3

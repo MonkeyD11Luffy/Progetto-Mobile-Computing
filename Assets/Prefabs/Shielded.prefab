@@ -107,11 +107,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f07497fc628063d94890512d33f8dc62, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ShieldedController
-  moveSpeed: 1.3
-  maxHealth: 3
+  maxHealth: 5
   contactDamage: 1
+  moveSpeed: 1.3
   shieldVisual: {fileID: 2031629430023782870}
   shieldArc: 0.3
+  shieldRotationSpeed: 80
 --- !u!50 &8823549752613829457
 Rigidbody2D:
   serializedVersion: 5

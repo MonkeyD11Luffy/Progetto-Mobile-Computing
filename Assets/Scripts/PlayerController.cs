@@ -15,15 +15,16 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float firePointDistance = 0.5f; // quanto avanti al player parte il colpo4
 
     [Header("Armi")]
-    [SerializeField] private float spreadAngle = 20f;
-    [SerializeField] private float spreadCooldownMult = 1.6f;
-    [SerializeField] private float pierceCooldownMult = 2f;
+    [SerializeField] private float spreadAngle = 25f;
+    [SerializeField] private float spreadCooldownMult = 2.4f;
+    [SerializeField] private float pierceCooldownMult = 1.3f;
+    [SerializeField] private float spreadLifetime = 0.35f; // gittata corta
 
     [Header("Corpo a corpo")]
     [SerializeField] private float meleeRange = 1.1f;
     [SerializeField] private float meleeArc = 0.3f;
     [SerializeField] private int meleeDamageMult = 2;
-    [SerializeField] private float meleeCooldownMult = 0.6f;
+    [SerializeField] private float meleeCooldownMult = 1.4f;
 
     [Header("Bombe")]
     [SerializeField] private GameObject bombPrefab;
@@ -32,10 +33,13 @@ public class PlayerController : MonoBehaviour
 
     [Header("Vita")]
     [SerializeField] private int maxHealth = 6;
-    [SerializeField] private float invulnerabilityDuration = 0.8f;
+    [SerializeField] private float invulnerabilityDuration = 0.5f;
 
     [Header("UI")]
     [SerializeField] private TextMeshProUGUI healthText;
+    [SerializeField] private TextMeshProUGUI bombText;
+    [SerializeField] private TextMeshProUGUI weaponText;
+
 
     private enum WeaponType { Single, Spread, Piercing, Melee }
     private WeaponType currentWeapon = WeaponType.Single;
@@ -54,6 +58,8 @@ public class PlayerController : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         currentHealth = maxHealth;
         currentBombs = maxBombs;
+        UpdateBombUI();
+        UpdateWeaponUI();
         UpdateHealthUI();
     }
 
@@ -96,8 +102,8 @@ public class PlayerController : MonoBehaviour
             _ => WeaponType.Single
         };
 
-        Debug.Log($"Arma attiva: {currentWeapon}");
-    }
+            UpdateWeaponUI();  
+  }
 
     private float GetCurrentCooldown()
     {
@@ -156,9 +162,9 @@ public class PlayerController : MonoBehaviour
             break;
 
         case WeaponType.Spread:
-            SpawnProjectile(origin, direction, false);
-            SpawnProjectile(origin, Rotate(direction, spreadAngle), false);
-            SpawnProjectile(origin, Rotate(direction, -spreadAngle), false);
+            SpawnProjectile(origin, direction, false, spreadLifetime);
+            SpawnProjectile(origin, Rotate(direction, spreadAngle), false, spreadLifetime);
+            SpawnProjectile(origin, Rotate(direction, -spreadAngle), false, spreadLifetime);
             break;
 
         case WeaponType.Piercing:
@@ -166,7 +172,8 @@ public class PlayerController : MonoBehaviour
             break;
     }
 }
-    private void SpawnProjectile(Vector2 origin, Vector2 direction, bool piercing)
+   
+    private void SpawnProjectile(Vector2 origin, Vector2 direction, bool piercing, float lifetime = -1f)
 {
     GameObject projectile = Instantiate(projectilePrefab, origin, Quaternion.identity);
 
@@ -175,6 +182,12 @@ public class PlayerController : MonoBehaviour
     {
         projController.SetDamage(projectileDamage);
         projController.SetPiercing(piercing);
+
+        // Se non viene passato un lifetime, resta quello di default del Prefab
+        if (lifetime > 0f)
+        {
+            projController.SetLifetime(lifetime);
+        }
     }
 
     Rigidbody2D projRb = projectile.GetComponent<Rigidbody2D>();
@@ -244,6 +257,7 @@ public class PlayerController : MonoBehaviour
 
         Instantiate(bombPrefab, transform.position, Quaternion.identity);
         currentBombs--;
+        UpdateBombUI();
     }
 
     private void HandleInvulnerability()
@@ -292,6 +306,30 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    private void UpdateBombUI()
+{
+    if (bombText != null)
+    {
+        bombText.color = currentBombs > 0 ? Color.white : Color.red;
+        bombText.text = $"Bombe: {currentBombs}";
+    }
+}
+
+    private void UpdateWeaponUI()
+{
+    if (weaponText == null) return;
+
+    string weaponName = currentWeapon switch
+    {
+        WeaponType.Spread => "Spread",
+        WeaponType.Piercing => "Perforante",
+        WeaponType.Melee => "Corpo a corpo",
+        _ => "Singolo"
+    };
+
+    weaponText.text = $"Arma: {weaponName}";
+}
+
     public void Heal(int amount)
     {
         currentHealth = Mathf.Min(currentHealth + amount, maxHealth);
@@ -323,6 +361,7 @@ public class PlayerController : MonoBehaviour
     public void AddBomb(int amount)
     {
         currentBombs = Mathf.Min(currentBombs + amount, maxBombs);
+        UpdateBombUI();
     }
 
     public void ApplySpeedBoost(float multiplier, float duration)

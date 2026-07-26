@@ -179,10 +179,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f9106924ffb66512eba8e303c52d0369, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MiniBossController
+  maxHealth: 15
+  contactDamage: 2
   moveSpeed: 1.5
   moveDuration: 1.5
   pauseDuration: 1
   projectilePrefab: {fileID: 7843852227812731380, guid: 71c61c8e932f2578781c05cd6f9f9aec, type: 3}
   projectileSpeed: 5
   projectilesPerBurst: 5
-  maxHealth: 8
