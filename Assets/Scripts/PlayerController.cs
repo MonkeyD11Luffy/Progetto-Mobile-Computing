@@ -40,10 +40,14 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private TextMeshProUGUI bombText;
     [SerializeField] private TextMeshProUGUI weaponText;
 
+    [Header("Feedback")]
+    [SerializeField] private Transform meleeVisual;
+    [SerializeField] private float meleeVisualDuration = 0.1f;
+
 
     private enum WeaponType { Single, Spread, Piercing, Melee }
     private WeaponType currentWeapon = WeaponType.Single;
-
+    private SpriteRenderer sr;
     private Rigidbody2D rb;
     private Vector2 moveInput;
     private float fireTimer;
@@ -56,6 +60,7 @@ public class PlayerController : MonoBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
+        sr = GetComponent<SpriteRenderer>();
         currentHealth = maxHealth;
         currentBombs = maxBombs;
         UpdateBombUI();
@@ -142,6 +147,7 @@ public class PlayerController : MonoBehaviour
 {
     if (currentWeapon == WeaponType.Melee)
     {
+        if (AudioManager.Instance != null) AudioManager.Instance.PlayMelee();
         MeleeAttack(direction);
         return;
     }
@@ -152,22 +158,24 @@ public class PlayerController : MonoBehaviour
         return;
     }
 
-    // La bocca di fuoco ruota con la direzione di mira, così il ventaglio resta simmetrico
     Vector2 origin = (Vector2)transform.position + direction * firePointDistance;
 
     switch (currentWeapon)
     {
         case WeaponType.Single:
+            if (AudioManager.Instance != null) AudioManager.Instance.PlayShootSingle();
             SpawnProjectile(origin, direction, false);
             break;
 
         case WeaponType.Spread:
+            if (AudioManager.Instance != null) AudioManager.Instance.PlayShootSpread();
             SpawnProjectile(origin, direction, false, spreadLifetime);
             SpawnProjectile(origin, Rotate(direction, spreadAngle), false, spreadLifetime);
             SpawnProjectile(origin, Rotate(direction, -spreadAngle), false, spreadLifetime);
             break;
 
         case WeaponType.Piercing:
+            if (AudioManager.Instance != null) AudioManager.Instance.PlayShootPierce();
             SpawnProjectile(origin, direction, true);
             break;
     }
@@ -238,6 +246,22 @@ public class PlayerController : MonoBehaviour
 
             hit.gameObject.SendMessage("TakeDamage", projectileDamage * meleeDamageMult, SendMessageOptions.DontRequireReceiver);
         }
+
+        if (meleeVisual != null)
+        {
+            StartCoroutine(ShowMeleeVisual(direction));
+        }
+    }
+
+    private System.Collections.IEnumerator ShowMeleeVisual(Vector2 direction)
+    {
+        float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+        meleeVisual.rotation = Quaternion.Euler(0, 0, angle);
+        meleeVisual.localPosition = direction * 0.7f;
+
+        meleeVisual.gameObject.SetActive(true);
+        yield return new WaitForSeconds(meleeVisualDuration);
+        meleeVisual.gameObject.SetActive(false);
     }
 
     private void HandleBombPlacement()
@@ -261,32 +285,42 @@ public class PlayerController : MonoBehaviour
     }
 
     private void HandleInvulnerability()
+{
+    if (!isInvulnerable)
     {
-        if (!isInvulnerable) return;
-
-        invulnerabilityTimer -= Time.deltaTime;
-        if (invulnerabilityTimer <= 0f)
-        {
-            isInvulnerable = false;
-        }
+        if (sr != null) sr.enabled = true;
+        return;
     }
+
+    invulnerabilityTimer -= Time.deltaTime;
+
+    // Alterna visibile/invisibile ~10 volte al secondo
+    if (sr != null) sr.enabled = Mathf.FloorToInt(invulnerabilityTimer * 10f) % 2 == 0;
+
+    if (invulnerabilityTimer <= 0f)
+    {
+        isInvulnerable = false;
+        if (sr != null) sr.enabled = true;
+    }
+}
 
     public void TakeDamage(int amount)
+{
+    if (isInvulnerable) return;
+
+    currentHealth -= amount;
+    UpdateHealthUI();
+
+    if (AudioManager.Instance != null) AudioManager.Instance.PlayPlayerHurt();
+
+    isInvulnerable = true;
+    invulnerabilityTimer = invulnerabilityDuration;
+
+    if (currentHealth <= 0)
     {
-        if (isInvulnerable) return;
-
-        currentHealth -= amount;
-        UpdateHealthUI();
-        isInvulnerable = true;
-        invulnerabilityTimer = invulnerabilityDuration;
-
-        Debug.Log($"Player colpito. Vita rimanente: {currentHealth}");
-
-        if (currentHealth <= 0)
-        {
-            Die();
-        }
+        Die();
     }
+}
 
     private void Die()
     {
@@ -371,11 +405,11 @@ public class PlayerController : MonoBehaviour
 
     private System.Collections.IEnumerator SpeedBoostCoroutine(float multiplier, float duration)
     {
-        float originalSpeed = moveSpeed;
-        moveSpeed *= multiplier;
+        float bonus = moveSpeed * (multiplier - 1f);
+        moveSpeed += bonus;
 
         yield return new WaitForSeconds(duration);
 
-        moveSpeed = originalSpeed;
+        moveSpeed -= bonus;
     }
 }

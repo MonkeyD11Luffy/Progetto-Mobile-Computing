@@ -4,10 +4,12 @@ public class BombController : MonoBehaviour
 {
     [Header("Timer")]
     [SerializeField] private float fuseTime = 2f;
+    
 
     [Header("Esplosione")]
     [SerializeField] private float explosionRadius = 1.5f;
     [SerializeField] private int explosionDamage = 3;
+    [SerializeField] private GameObject explosionEffectPrefab;
 
     private void Start()
     {
@@ -16,6 +18,11 @@ public class BombController : MonoBehaviour
 
     private void Explode()
     {
+
+        if (explosionEffectPrefab != null)
+{
+    Instantiate(explosionEffectPrefab, transform.position, Quaternion.identity);
+}
         Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, explosionRadius);
 
         foreach (Collider2D hit in hits)
