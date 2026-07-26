@@ -1,11 +1,8 @@
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody2D))]
-public class BossController : MonoBehaviour
+public class BossController : EnemyBase
 {
-    [Header("Vita")]
-    [SerializeField] private int maxHealth = 25;
-
     [Header("Movimento")]
     [SerializeField] private float moveSpeed = 1.2f;
     [SerializeField] private float chargeSpeed = 9f;
@@ -25,9 +22,6 @@ public class BossController : MonoBehaviour
     [SerializeField] private GameObject minionPrefab;
     [SerializeField] private int minionCount = 2;
 
-    [Header("Danno da contatto")]
-    [SerializeField] private int contactDamage = 1;
-
     [Header("Colori fase")]
     [SerializeField] private Color phase2Color = new Color(1f, 0.6f, 0.2f);
     [SerializeField] private Color phase3Color = new Color(1f, 0.2f, 0.2f);
@@ -36,32 +30,24 @@ public class BossController : MonoBehaviour
     private enum BossState { Moving, Telegraph, Charging }
     private enum BossAction { Radial, Volley, Charge, Summon }
 
-    private Rigidbody2D rb;
     private SpriteRenderer sr;
-    private Transform player;
-
-    private int currentHealth;
-    private bool isDead = false;
-
     private BossState currentState;
     private BossAction nextAction;
     private float stateTimer;
     private Vector2 chargeDirection;
-    private Color phaseColor;
+    private Color phase1Color;
 
-    private void Awake()
+    protected override void Awake()
     {
-        rb = GetComponent<Rigidbody2D>();
-        sr = GetComponent<SpriteRenderer>();
-        currentHealth = maxHealth;
+        base.Awake();
 
-        if (sr != null) phaseColor = sr.color;
+        sr = GetComponent<SpriteRenderer>();
+        if (sr != null) phase1Color = sr.color;
     }
 
-    private void Start()
+    protected override void Start()
     {
-        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
-        if (playerObj != null) player = playerObj.transform;
+        base.Start();
 
         currentState = BossState.Moving;
         stateTimer = moveDuration;
@@ -122,8 +108,6 @@ public class BossController : MonoBehaviour
 
         nextAction = ChooseAction();
 
-        // Se sta per caricare, memorizza subito la direzione: il giocatore
-        // deve poter schivare leggendo il telegrafo
         if (nextAction == BossAction.Charge && player != null)
         {
             chargeDirection = ((Vector2)player.position - (Vector2)transform.position).normalized;
@@ -137,14 +121,9 @@ public class BossController : MonoBehaviour
         int phase = GetPhase();
 
         if (phase == 1) return BossAction.Radial;
+        if (phase == 2) return Random.value < 0.5f ? BossAction.Radial : BossAction.Volley;
 
-        if (phase == 2)
-        {
-            return Random.value < 0.5f ? BossAction.Radial : BossAction.Volley;
-        }
-
-        int roll = Random.Range(0, 4);
-        return (BossAction)roll;
+        return (BossAction)Random.Range(0, 4);
     }
 
     private void ExecuteAction()
@@ -195,25 +174,23 @@ public class BossController : MonoBehaviour
 
     private void FireRadial()
     {
-        if (projectilePrefab == null) return;
-
         for (int i = 0; i < radialCount; i++)
         {
             float angle = (360f / radialCount) * i * Mathf.Deg2Rad;
             Vector2 direction = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
-            SpawnProjectile(direction);
+            SpawnProjectile(projectilePrefab, transform.position, direction, projectileSpeed);
         }
     }
 
     private void FireVolley()
     {
-        if (projectilePrefab == null || player == null) return;
+        if (player == null) return;
 
         Vector2 aim = ((Vector2)player.position - (Vector2)transform.position).normalized;
 
-        SpawnProjectile(aim);
-        SpawnProjectile(Rotate(aim, volleySpread));
-        SpawnProjectile(Rotate(aim, -volleySpread));
+        SpawnProjectile(projectilePrefab, transform.position, aim, projectileSpeed);
+        SpawnProjectile(projectilePrefab, transform.position, Rotate(aim, volleySpread), projectileSpeed);
+        SpawnProjectile(projectilePrefab, transform.position, Rotate(aim, -volleySpread), projectileSpeed);
     }
 
     private void SummonMinions()
@@ -228,22 +205,10 @@ public class BossController : MonoBehaviour
             Instantiate(minionPrefab, (Vector2)transform.position + offset, Quaternion.identity, transform.parent);
         }
 
-        // I rinforzi vanno contati, altrimenti la porta si sblocca in anticipo
         if (RoomManager.Instance != null)
         {
             RoomManager.Instance.RegisterEnemySpawn(minionCount);
         }
-    }
-
-    private void SpawnProjectile(Vector2 direction)
-    {
-        GameObject projectile = Instantiate(projectilePrefab, transform.position, Quaternion.identity);
-
-        Rigidbody2D projRb = projectile.GetComponent<Rigidbody2D>();
-        if (projRb != null) projRb.linearVelocity = direction * projectileSpeed;
-
-        float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
-        projectile.transform.rotation = Quaternion.Euler(0, 0, angle);
     }
 
     private Vector2 Rotate(Vector2 direction, float degrees)
@@ -265,60 +230,26 @@ public class BossController : MonoBehaviour
         int phase = GetPhase();
         if (phase == 3) sr.color = phase3Color;
         else if (phase == 2) sr.color = phase2Color;
-        else sr.color = phaseColor;
+        else sr.color = phase1Color;
     }
 
-    private void OnCollisionEnter2D(Collision2D collision)
+    public override void TakeDamage(int amount)
     {
-        TryDamagePlayer(collision.gameObject);
-    }
+        base.TakeDamage(amount);
 
-    private void OnCollisionStay2D(Collision2D collision)
-    {
-        TryDamagePlayer(collision.gameObject);
-    }
-
-    private void TryDamagePlayer(GameObject other)
-    {
-        if (other.CompareTag("Player"))
-        {
-            PlayerController playerController = other.GetComponent<PlayerController>();
-            if (playerController != null)
-            {
-                playerController.TakeDamage(contactDamage);
-            }
-        }
-    }
-
-    private void TakeDamage(int amount)
-    {
-        if (isDead) return;
-
-        currentHealth -= amount;
-
-        if (currentHealth <= 0)
-        {
-            isDead = true;
-            Die();
-            return;
-        }
-
-        // Se non è in mezzo a un telegrafo, aggiorna il colore alla fase corrente
-        if (currentState != BossState.Telegraph)
+        if (!isDead && currentState != BossState.Telegraph)
         {
             RestorePhaseColor();
         }
     }
 
-    private void Die()
-{
-
-    if (RoomManager.Instance != null)
+    protected override void Die()
     {
-        RoomManager.Instance.RegisterEnemyDeath();
-        RoomManager.Instance.SpawnRandomPermanentUpgrade(transform.position, transform.parent.gameObject);
-    }
+        if (RoomManager.Instance != null)
+        {
+            RoomManager.Instance.SpawnRandomPermanentUpgrade(transform.position, transform.parent.gameObject);
+        }
 
-    Destroy(gameObject);
-}
+        base.Die();
+    }
 }

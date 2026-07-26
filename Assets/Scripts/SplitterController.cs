@@ -1,94 +1,28 @@
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody2D))]
-public class SplitterController : MonoBehaviour
+public class SplitterController : EnemyBase
 {
     [Header("Movimento")]
     [SerializeField] private float moveSpeed = 1.2f;
 
-    [Header("Vita")]
-    [SerializeField] private int maxHealth = 5;
-
-    [Header("Danno da contatto")]
-    [SerializeField] private int contactDamage = 1;
-
     [Header("Divisione")]
-    [SerializeField] private GameObject splitPrefab;   // il pezzo piccolo generato alla morte
+    [SerializeField] private GameObject splitPrefab;
     [SerializeField] private int splitCount = 2;
-    [SerializeField] private float splitSpread = 0.6f; // distanza dei figli dal punto di morte
-
-    private Rigidbody2D rb;
-    private Transform player;
-    private int currentHealth;
-    private bool isDead = false;
-    private void Awake()
-    {
-        rb = GetComponent<Rigidbody2D>();
-        currentHealth = maxHealth;
-    }
-
-    private void Start()
-    {
-        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
-        if (playerObj != null)
-        {
-            player = playerObj.transform;
-        }
-    }
+    [SerializeField] private float splitSpread = 0.6f;
 
     private void FixedUpdate()
     {
-        if (player == null) return;
+        if (isDead || player == null) return;
 
         Vector2 direction = ((Vector2)player.position - (Vector2)transform.position).normalized;
         rb.linearVelocity = direction * moveSpeed;
     }
 
-    private void OnCollisionEnter2D(Collision2D collision)
-    {
-        TryDamagePlayer(collision.gameObject);
-    }
-
-    private void OnCollisionStay2D(Collision2D collision)
-    {
-        TryDamagePlayer(collision.gameObject);
-    }
-
-    private void TryDamagePlayer(GameObject other)
-    {
-        if (other.CompareTag("Player"))
-        {
-            PlayerController playerController = other.GetComponent<PlayerController>();
-            if (playerController != null)
-            {
-                playerController.TakeDamage(contactDamage);
-            }
-        }
-    }
-
-    private void TakeDamage(int amount)
-{
-    if (isDead) return;
-
-    currentHealth -= amount;
-
-    if (currentHealth <= 0)
-    {
-        isDead = true;
-        Die();
-    }
-}
-
-    private void Die()
+    protected override void Die()
     {
         Split();
-
-        if (RoomManager.Instance != null)
-        {
-            RoomManager.Instance.RegisterEnemyDeath();
-        }
-
-        Destroy(gameObject);
+        base.Die(); // conteggio morte + Destroy
     }
 
     private void Split()

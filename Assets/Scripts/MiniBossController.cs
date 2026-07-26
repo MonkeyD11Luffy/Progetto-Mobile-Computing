@@ -1,7 +1,7 @@
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody2D))]
-public class MinibossController : MonoBehaviour
+public class MinibossController : EnemyBase
 {
     [Header("Movimento")]
     [SerializeField] private float moveSpeed = 1.5f;
@@ -13,30 +13,14 @@ public class MinibossController : MonoBehaviour
     [SerializeField] private float projectileSpeed = 5f;
     [SerializeField] private int projectilesPerBurst = 5;
 
-    [Header("Vita")]
-    [SerializeField] private int maxHealth = 8;
+    private enum BossState { Moving, Pausing }
 
-    private Rigidbody2D rb;
-    private Transform player;
-    private int currentHealth;
-    private bool isDead = false;
-    private enum BossState { Moving, Pausing, Attacking }
     private BossState currentState;
     private float stateTimer;
 
-    private void Awake()
+    protected override void Start()
     {
-        rb = GetComponent<Rigidbody2D>();
-        currentHealth = maxHealth;
-    }
-
-    private void Start()
-    {
-        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
-        if (playerObj != null)
-        {
-            player = playerObj.transform;
-        }
+        base.Start();
 
         currentState = BossState.Moving;
         stateTimer = moveDuration;
@@ -44,100 +28,53 @@ public class MinibossController : MonoBehaviour
 
     private void Update()
     {
+        if (isDead) return;
+
         stateTimer -= Time.deltaTime;
+        if (stateTimer > 0f) return;
 
-        if (stateTimer <= 0f)
+        if (currentState == BossState.Moving)
         {
-            switch (currentState)
-            {
-                case BossState.Moving:
-                    currentState = BossState.Pausing;
-                    stateTimer = pauseDuration;
-                    rb.linearVelocity = Vector2.zero;
-                    break;
-
-                case BossState.Pausing:
-                    FireBurst();
-                    currentState = BossState.Moving;
-                    stateTimer = moveDuration;
-                    break;
-            }
+            currentState = BossState.Pausing;
+            stateTimer = pauseDuration;
+            rb.linearVelocity = Vector2.zero;
+        }
+        else
+        {
+            FireBurst();
+            currentState = BossState.Moving;
+            stateTimer = moveDuration;
         }
     }
 
     private void FixedUpdate()
     {
-        if (currentState == BossState.Moving && player != null)
+        if (isDead || player == null) return;
+
+        if (currentState == BossState.Moving)
         {
-            Vector2 direction = (player.position - transform.position).normalized;
+            Vector2 direction = ((Vector2)player.position - (Vector2)transform.position).normalized;
             rb.linearVelocity = direction * moveSpeed;
         }
     }
 
     private void FireBurst()
     {
-        if (projectilePrefab == null) return;
-
         for (int i = 0; i < projectilesPerBurst; i++)
         {
-            float angle = (360f / projectilesPerBurst) * i;
-            Vector2 direction = new Vector2(Mathf.Cos(angle * Mathf.Deg2Rad), Mathf.Sin(angle * Mathf.Deg2Rad));
-
-            GameObject projectile = Instantiate(projectilePrefab, transform.position, Quaternion.identity);
-            Rigidbody2D projRb = projectile.GetComponent<Rigidbody2D>();
-            if (projRb != null)
-            {
-                projRb.linearVelocity = direction * projectileSpeed;
-            }
-
-            float rotAngle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
-            projectile.transform.rotation = Quaternion.Euler(0, 0, rotAngle);
+            float angle = (360f / projectilesPerBurst) * i * Mathf.Deg2Rad;
+            Vector2 direction = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+            SpawnProjectile(projectilePrefab, transform.position, direction, projectileSpeed);
         }
     }
 
-    private void OnCollisionEnter2D(Collision2D collision)
-    {
-        TryDamagePlayer(collision.gameObject);
-    }
-
-    private void OnCollisionStay2D(Collision2D collision)
-    {
-        TryDamagePlayer(collision.gameObject);
-    }
-
-    private void TryDamagePlayer(GameObject other)
-    {
-        if (other.CompareTag("Player"))
-        {
-            PlayerController playerController = other.GetComponent<PlayerController>();
-            if (playerController != null)
-            {
-                playerController.TakeDamage(1);
-            }
-        }
-    }
-
-    private void TakeDamage(int amount)
-{
-    if (isDead) return;
-
-    currentHealth -= amount;
-
-    if (currentHealth <= 0)
-    {
-        isDead = true;
-        Die();
-    }
-}
-
-    private void Die()
+    protected override void Die()
     {
         if (RoomManager.Instance != null)
         {
-            RoomManager.Instance.RegisterEnemyDeath();
             RoomManager.Instance.SpawnRandomPermanentUpgrade(transform.position, transform.parent.gameObject);
         }
 
-        Destroy(gameObject);
+        base.Die();
     }
 }

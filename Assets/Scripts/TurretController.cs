@@ -1,37 +1,24 @@
 using UnityEngine;
 
-public class TurretController : MonoBehaviour
+public class TurretController : EnemyBase
 {
     [Header("Sparo")]
     [SerializeField] private GameObject projectilePrefab;
     [SerializeField] private float projectileSpeed = 6f;
     [SerializeField] private float fireInterval = 2f;
 
-    [Header("Vita")]
-    [SerializeField] private int maxHealth = 3;
-
-    private Transform player;
     private float fireTimer;
-    private int currentHealth;
 
-    private void Awake()
+    protected override void Start()
     {
-        currentHealth = maxHealth;
-    }
-
-    private void Start()
-    {
-        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
-        if (playerObj != null)
-        {
-            player = playerObj.transform;
-        }
-
+        base.Start();
         fireTimer = fireInterval;
     }
 
     private void Update()
     {
+        if (isDead) return;
+
         fireTimer -= Time.deltaTime;
 
         if (fireTimer <= 0f && player != null)
@@ -43,38 +30,7 @@ public class TurretController : MonoBehaviour
 
     private void Fire()
     {
-        if (projectilePrefab == null) return;
-
-        Vector2 direction = (player.position - transform.position).normalized;
-
-        GameObject projectile = Instantiate(projectilePrefab, transform.position, Quaternion.identity);
-        Rigidbody2D projRb = projectile.GetComponent<Rigidbody2D>();
-        if (projRb != null)
-        {
-            projRb.linearVelocity = direction * projectileSpeed;
-        }
-
-        float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
-        projectile.transform.rotation = Quaternion.Euler(0, 0, angle);
-    }
-
-    private void TakeDamage(int amount)
-    {
-        currentHealth -= amount;
-
-        if (currentHealth <= 0)
-        {
-            Die();
-        }
-    }
-
-    private void Die()
-    {
-        if (RoomManager.Instance != null)
-        {
-            RoomManager.Instance.RegisterEnemyDeath();
-        }
-
-        Destroy(gameObject);
+        Vector2 direction = ((Vector2)player.position - (Vector2)transform.position).normalized;
+        SpawnProjectile(projectilePrefab, transform.position, direction, projectileSpeed);
     }
 }
