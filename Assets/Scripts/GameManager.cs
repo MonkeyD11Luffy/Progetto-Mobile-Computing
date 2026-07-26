@@ -13,6 +13,12 @@ public class GameManager : MonoBehaviour
         Instance = this;
     }
 
+    public void GoToMainMenu()
+    {
+        Time.timeScale = 1f;
+        SceneManager.LoadScene("MainMenu");
+    }
+
     public void ShowGameOver()
     {
         if (gameOverPanel != null)
