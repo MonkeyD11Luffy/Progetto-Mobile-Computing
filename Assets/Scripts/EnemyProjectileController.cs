@@ -20,6 +20,12 @@ public class EnemyProjectileController : MonoBehaviour
                 playerController.TakeDamage(damage);
             }
             Destroy(gameObject);
+            return;
+        }
+
+        if (other.CompareTag("Wall"))
+        {
+            Destroy(gameObject);
         }
     }
 }

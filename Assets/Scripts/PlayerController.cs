@@ -34,11 +34,24 @@ public class PlayerController : MonoBehaviour
     [Header("Vita")]
     [SerializeField] private int maxHealth = 6;
     [SerializeField] private float invulnerabilityDuration = 0.5f;
+    [SerializeField] private float healthRegenInterval = 5f;
+    [SerializeField] private float healthRegenChance = 0f;
+    [SerializeField] private int contactDamageReduction = 0;
+
+    [Header("Potenziamenti Sparo")]
+    [SerializeField] private int projectileBounces = 0;
+
+    [Header("Feedback danno")]
+    [SerializeField] private float hitFlashDuration = 0.1f;
+    [SerializeField] private float hitShakeDuration = 0.15f;
+    [SerializeField] private float hitShakeMagnitude = 0.1f;
 
     [Header("UI")]
     [SerializeField] private TextMeshProUGUI healthText;
     [SerializeField] private TextMeshProUGUI bombText;
     [SerializeField] private TextMeshProUGUI weaponText;
+    [SerializeField] private TextMeshProUGUI upgradePopupText;
+    [SerializeField] private float upgradePopupDuration = 1.5f;
 
     [Header("Feedback")]
     [SerializeField] private Transform meleeVisual;
@@ -56,6 +69,10 @@ public class PlayerController : MonoBehaviour
     private float bombTimer;
     private bool isInvulnerable;
     private float invulnerabilityTimer;
+    private float healthRegenTimer;
+    private Color baseSpriteColor;
+    private Coroutine flashCoroutine;
+    private Coroutine upgradePopupCoroutine;
 
     private void Awake()
     {
@@ -63,6 +80,9 @@ public class PlayerController : MonoBehaviour
         sr = GetComponent<SpriteRenderer>();
         currentHealth = maxHealth;
         currentBombs = maxBombs;
+        healthRegenTimer = healthRegenInterval;
+        if (sr != null) baseSpriteColor = sr.color;
+        if (upgradePopupText != null) upgradePopupText.gameObject.SetActive(false);
         UpdateBombUI();
         UpdateWeaponUI();
         UpdateHealthUI();
@@ -75,6 +95,22 @@ public class PlayerController : MonoBehaviour
         HandleFiring();
         HandleBombPlacement();
         HandleInvulnerability();
+        HandleHealthRegen();
+    }
+
+    private void HandleHealthRegen()
+    {
+        if (healthRegenChance <= 0f || currentHealth >= maxHealth) return;
+
+        healthRegenTimer -= Time.deltaTime;
+        if (healthRegenTimer > 0f) return;
+
+        healthRegenTimer = healthRegenInterval;
+
+        if (Random.value < healthRegenChance)
+        {
+            Heal(1);
+        }
     }
 
     private void FixedUpdate()
@@ -190,6 +226,7 @@ public class PlayerController : MonoBehaviour
     {
         projController.SetDamage(projectileDamage);
         projController.SetPiercing(piercing);
+        projController.SetBounces(projectileBounces);
 
         // Se non viene passato un lifetime, resta quello di default del Prefab
         if (lifetime > 0f)
@@ -304,6 +341,14 @@ public class PlayerController : MonoBehaviour
     }
 }
 
+    public void TakeContactDamage(int amount)
+    {
+        int reduced = Mathf.Max(0, amount - contactDamageReduction);
+        if (reduced <= 0) return;
+
+        TakeDamage(reduced);
+    }
+
     public void TakeDamage(int amount)
 {
     if (isInvulnerable) return;
@@ -312,6 +357,8 @@ public class PlayerController : MonoBehaviour
     UpdateHealthUI();
 
     if (AudioManager.Instance != null) AudioManager.Instance.PlayPlayerHurt();
+    if (CameraShake.Instance != null) CameraShake.Instance.Shake(hitShakeDuration, hitShakeMagnitude);
+    PlayHitFlash();
 
     isInvulnerable = true;
     invulnerabilityTimer = invulnerabilityDuration;
@@ -321,6 +368,22 @@ public class PlayerController : MonoBehaviour
         Die();
     }
 }
+
+    private void PlayHitFlash()
+    {
+        if (sr == null) return;
+
+        if (flashCoroutine != null) StopCoroutine(flashCoroutine);
+        flashCoroutine = StartCoroutine(HitFlashRoutine());
+    }
+
+    private System.Collections.IEnumerator HitFlashRoutine()
+    {
+        sr.color = Color.white;
+        yield return new WaitForSeconds(hitFlashDuration);
+        sr.color = baseSpriteColor;
+        flashCoroutine = null;
+    }
 
     private void Die()
     {
@@ -396,6 +459,45 @@ public class PlayerController : MonoBehaviour
     {
         currentBombs = Mathf.Min(currentBombs + amount, maxBombs);
         UpdateBombUI();
+    }
+
+    public void IncreaseHealthRegenChance(float amount)
+    {
+        healthRegenChance = Mathf.Clamp01(healthRegenChance + amount);
+    }
+
+    public void IncreaseContactDamageReduction(int amount)
+    {
+        contactDamageReduction += amount;
+    }
+
+    public void WidenMeleeArc(float amount)
+    {
+        meleeArc = Mathf.Max(-1f, meleeArc - amount);
+    }
+
+    public void IncreaseProjectileBounces(int amount)
+    {
+        projectileBounces += amount;
+    }
+
+    public void ShowUpgradePopup(string message)
+    {
+        if (upgradePopupText == null) return;
+
+        if (upgradePopupCoroutine != null) StopCoroutine(upgradePopupCoroutine);
+        upgradePopupCoroutine = StartCoroutine(UpgradePopupRoutine(message));
+    }
+
+    private System.Collections.IEnumerator UpgradePopupRoutine(string message)
+    {
+        upgradePopupText.text = message;
+        upgradePopupText.gameObject.SetActive(true);
+
+        yield return new WaitForSeconds(upgradePopupDuration);
+
+        upgradePopupText.gameObject.SetActive(false);
+        upgradePopupCoroutine = null;
     }
 
     public void ApplySpeedBoost(float multiplier, float duration)
