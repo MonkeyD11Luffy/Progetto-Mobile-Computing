@@ -18,6 +18,7 @@ public class BombController : MonoBehaviour
 
     private void Explode()
     {
+        if (AudioManager.Instance != null) AudioManager.Instance.PlayExplosion();
 
         if (explosionEffectPrefab != null)
 {
