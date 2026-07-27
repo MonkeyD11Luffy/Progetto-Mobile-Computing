@@ -348,8 +348,8 @@ MonoBehaviour:
   enrageHealthRatio: 0.4
   enrageSpeedMultiplier: 1.4
   enrageColor: {r: 1, g: 0.3, b: 0.1, a: 1}
-  healthBarFill: {fileID: 0}
-  healthBarRoot: {fileID: 0}
+  healthBarFill: {fileID: 3725787053202305065}
+  healthBarRoot: {fileID: 3050016494842750956}
   deathShakeDuration: 0.25
   deathShakeMagnitude: 0.12
 --- !u!1 &5759167264061280377
@@ -380,7 +380,7 @@ RectTransform:
   m_GameObject: {fileID: 5759167264061280377}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.012499999, y: 0.005, z: 0.01}
+  m_LocalScale: {x: 0.012499999, y: 0.002, z: 0.01}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 6965061826724724565}
@@ -389,8 +389,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 2.7512}
-  m_SizeDelta: {x: 200, y: 3}
+  m_AnchoredPosition: {x: 0, y: 0.8}
+  m_SizeDelta: {x: 250, y: 1}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!223 &8331421478985681955
 Canvas:
