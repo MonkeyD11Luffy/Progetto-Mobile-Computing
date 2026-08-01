@@ -17,28 +17,24 @@ public class ShieldedController : EnemyBase
     {
         if (isDead || player == null) return;
 
-        Vector2 targetDirection = ((Vector2)player.position - (Vector2)transform.position).normalized;
-
         shieldDirection = Vector3.RotateTowards(
             shieldDirection,
-            targetDirection,
+            DirectionToPlayer(),
             shieldRotationSpeed * Mathf.Deg2Rad * Time.deltaTime,
             0f
         );
 
         if (shieldVisual != null)
         {
-            float angle = Mathf.Atan2(shieldDirection.y, shieldDirection.x) * Mathf.Rad2Deg;
-            shieldVisual.rotation = Quaternion.Euler(0, 0, angle);
+            shieldVisual.rotation = Quaternion.Euler(0, 0, VectorUtils.ToAngle(shieldDirection));
         }
     }
 
     private void FixedUpdate()
     {
-        if (isDead || player == null) return;
+        if (isDead) return;
 
-        Vector2 direction = ((Vector2)player.position - (Vector2)transform.position).normalized;
-        rb.linearVelocity = direction * moveSpeed;
+        MoveTowardsPlayer(moveSpeed);
     }
 
     public bool IsBlocked(Vector2 hitPosition)

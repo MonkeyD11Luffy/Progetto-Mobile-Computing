@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 3104233726022172875}
   - component: {fileID: 5165655135945016852}
   - component: {fileID: 4220155450954141188}
+  - component: {fileID: 159332014749980373}
   m_Layer: 0
   m_Name: Walker
   m_TagString: Enemy
@@ -85,7 +86,7 @@ SpriteRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
-  m_Color: {r: 0.9528302, g: 0, b: 0, a: 1}
+  m_Color: {r: 0.8632076, g: 0.8632076, b: 0.8632076, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -108,6 +109,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::NewMonoBehaviourScript
   maxHealth: 4
   contactDamage: 1
+  hitFlashDuration: 0.15
+  flashByBlink: 1
+  deathEffectDuration: 0.2
   moveSpeed: 2
 --- !u!50 &5165655135945016852
 Rigidbody2D:
@@ -182,3 +186,33 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 1, y: 1}
   m_EdgeRadius: 0
+--- !u!114 &159332014749980373
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6090184857749934521}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8b58d711371d9c189b5d5320a22a8ad1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyVisuals
+  walkDown:
+  - {fileID: 2004902879067164879, guid: 51b7a04a03db158b7b0c80c522e77780, type: 3}
+  - {fileID: -8219397959613254314, guid: 51b7a04a03db158b7b0c80c522e77780, type: 3}
+  - {fileID: 2609183553645755923, guid: 51b7a04a03db158b7b0c80c522e77780, type: 3}
+  - {fileID: -412045188947647153, guid: 51b7a04a03db158b7b0c80c522e77780, type: 3}
+  walkUp:
+  - {fileID: 8112918248409167196, guid: 51b7a04a03db158b7b0c80c522e77780, type: 3}
+  - {fileID: 2191650228906504390, guid: 51b7a04a03db158b7b0c80c522e77780, type: 3}
+  - {fileID: -7475410645821433079, guid: 51b7a04a03db158b7b0c80c522e77780, type: 3}
+  - {fileID: 565343974522415823, guid: 51b7a04a03db158b7b0c80c522e77780, type: 3}
+  walkSide:
+  - {fileID: -6113690529437154101, guid: 51b7a04a03db158b7b0c80c522e77780, type: 3}
+  - {fileID: -8196037698668108982, guid: 51b7a04a03db158b7b0c80c522e77780, type: 3}
+  - {fileID: 3528509181494430579, guid: 51b7a04a03db158b7b0c80c522e77780, type: 3}
+  - {fileID: -7617867709090185172, guid: 51b7a04a03db158b7b0c80c522e77780, type: 3}
+  frameRate: 6
+  idleFrame: 0
+  moveThreshold: 0.01

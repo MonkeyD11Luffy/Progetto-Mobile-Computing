@@ -13,10 +13,9 @@ public class SplitterController : EnemyBase
 
     private void FixedUpdate()
     {
-        if (isDead || player == null) return;
+        if (isDead) return;
 
-        Vector2 direction = ((Vector2)player.position - (Vector2)transform.position).normalized;
-        rb.linearVelocity = direction * moveSpeed;
+        MoveTowardsPlayer(moveSpeed);
     }
 
     protected override void Die()
@@ -27,19 +26,7 @@ public class SplitterController : EnemyBase
 
     private void Split()
     {
-        if (splitPrefab == null || splitCount <= 0) return;
-
-        for (int i = 0; i < splitCount; i++)
-        {
-            float angle = (360f / splitCount) * i * Mathf.Deg2Rad;
-            Vector2 offset = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * splitSpread;
-
-            Instantiate(splitPrefab, (Vector2)transform.position + offset, Quaternion.identity, transform.parent);
-        }
-
-        if (RoomManager.Instance != null)
-        {
-            RoomManager.Instance.RegisterEnemySpawn(splitCount);
-        }
+        // Registra da sé lo spawn nel RoomManager
+        SpawnEnemiesAroundSelf(splitPrefab, splitCount, splitSpread);
     }
 }

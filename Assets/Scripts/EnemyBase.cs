@@ -22,7 +22,8 @@ public abstract class EnemyBase : MonoBehaviour
     protected bool isDead;
     protected bool isFlashing;
 
-    private Color baseSpriteColor;
+    protected Color baseSpriteColor;
+
     private Coroutine flashCoroutine;
 
     protected virtual void Awake()
@@ -150,6 +151,22 @@ public abstract class EnemyBase : MonoBehaviour
         }
     }
 
+    // Direzione unitaria verso il player, Vector2.zero se il player non c'è
+    protected Vector2 DirectionToPlayer()
+    {
+        if (player == null) return Vector2.zero;
+
+        return ((Vector2)player.position - (Vector2)transform.position).normalized;
+    }
+
+    // Inseguimento: usato da Walker, Splitter, Shielded, Miniboss e Boss
+    protected void MoveTowardsPlayer(float speed)
+    {
+        if (player == null || rb == null) return;
+
+        rb.linearVelocity = DirectionToPlayer() * speed;
+    }
+
     // Utilità condivisa: usata da Turret, Teleporter, Miniboss e Boss
     protected void SpawnProjectile(GameObject prefab, Vector2 origin, Vector2 direction, float speed)
     {
@@ -163,7 +180,36 @@ public abstract class EnemyBase : MonoBehaviour
             projRb.linearVelocity = direction * speed;
         }
 
-        float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
-        projectile.transform.rotation = Quaternion.Euler(0, 0, angle);
+        projectile.transform.rotation = Quaternion.Euler(0, 0, VectorUtils.ToAngle(direction));
+    }
+
+    // Raffica a ventaglio completo attorno al nemico
+    protected void FireRadialBurst(GameObject prefab, int count, float speed, float angleOffset = 0f)
+    {
+        if (prefab == null || count <= 0) return;
+
+        for (int i = 0; i < count; i++)
+        {
+            float angle = (360f / count) * i + angleOffset;
+            SpawnProjectile(prefab, transform.position, VectorUtils.FromAngle(angle), speed);
+        }
+    }
+
+    // Genera nemici in cerchio attorno a sé (Splitter che si divide, Boss che evoca).
+    // Registra da sola lo spawn nel RoomManager: senza, le porte si sbloccherebbero in anticipo.
+    protected void SpawnEnemiesAroundSelf(GameObject prefab, int count, float radius)
+    {
+        if (prefab == null || count <= 0) return;
+
+        for (int i = 0; i < count; i++)
+        {
+            Vector2 offset = VectorUtils.FromAngle((360f / count) * i) * radius;
+            Instantiate(prefab, (Vector2)transform.position + offset, Quaternion.identity, transform.parent);
+        }
+
+        if (RoomManager.Instance != null)
+        {
+            RoomManager.Instance.RegisterEnemySpawn(count);
+        }
     }
 }

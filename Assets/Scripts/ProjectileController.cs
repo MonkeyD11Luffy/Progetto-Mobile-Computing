@@ -79,8 +79,7 @@ public class ProjectileController : MonoBehaviour
         {
             rb.linearVelocity = Vector2.Reflect(rb.linearVelocity, normal);
 
-            float angle = Mathf.Atan2(rb.linearVelocity.y, rb.linearVelocity.x) * Mathf.Rad2Deg;
-            transform.rotation = Quaternion.Euler(0, 0, angle);
+            transform.rotation = Quaternion.Euler(0, 0, VectorUtils.ToAngle(rb.linearVelocity));
         }
 
         bouncesLeft--;

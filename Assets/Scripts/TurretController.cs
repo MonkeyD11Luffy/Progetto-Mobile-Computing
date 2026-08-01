@@ -30,7 +30,6 @@ public class TurretController : EnemyBase
 
     private void Fire()
     {
-        Vector2 direction = ((Vector2)player.position - (Vector2)transform.position).normalized;
-        SpawnProjectile(projectilePrefab, transform.position, direction, projectileSpeed);
+        SpawnProjectile(projectilePrefab, transform.position, DirectionToPlayer(), projectileSpeed);
     }
 }

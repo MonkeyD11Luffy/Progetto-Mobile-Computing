@@ -17,19 +17,9 @@ public class DasherController : EnemyBase
 
     private enum DasherState { Idle, Telegraph, Dashing }
 
-    private SpriteRenderer sr;
     private DasherState currentState;
     private float stateTimer;
     private Vector2 dashDirection;
-    private Color originalColor;
-
-    protected override void Awake()
-    {
-        base.Awake();
-
-        sr = GetComponent<SpriteRenderer>();
-        if (sr != null) originalColor = sr.color;
-    }
 
     protected override void Start()
     {
@@ -68,8 +58,7 @@ public class DasherController : EnemyBase
 
         if (currentState == DasherState.Idle && player != null)
         {
-            Vector2 direction = ((Vector2)player.position - (Vector2)transform.position).normalized;
-            rb.linearVelocity = direction * idleMoveSpeed;
+            MoveTowardsPlayer(idleMoveSpeed);
         }
         else
         {
@@ -85,10 +74,10 @@ public class DasherController : EnemyBase
 
         if (player != null)
         {
-            dashDirection = ((Vector2)player.position - (Vector2)transform.position).normalized;
+            dashDirection = DirectionToPlayer();
         }
 
-        if (sr != null) sr.color = telegraphColor;
+        if (spriteRenderer != null) spriteRenderer.color = telegraphColor;
     }
 
     private void StartDash()
@@ -97,7 +86,7 @@ public class DasherController : EnemyBase
         stateTimer = dashDuration;
         rb.linearVelocity = dashDirection * dashSpeed;
 
-        if (sr != null) sr.color = originalColor;
+        if (spriteRenderer != null) spriteRenderer.color = baseSpriteColor;
     }
 
     private void StopDash()

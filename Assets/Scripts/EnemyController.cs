@@ -8,9 +8,8 @@ public class EnemyController : EnemyBase
 
     private void FixedUpdate()
     {
-        if (isDead || player == null) return;
+        if (isDead) return;
 
-        Vector2 direction = ((Vector2)player.position - (Vector2)transform.position).normalized;
-        rb.linearVelocity = direction * moveSpeed;
+        MoveTowardsPlayer(moveSpeed);
     }
 }

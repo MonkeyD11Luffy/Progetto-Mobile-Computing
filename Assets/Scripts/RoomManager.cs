@@ -17,8 +17,17 @@ public class RoomManager : MonoBehaviour
     [Header("Potenziamenti Permanenti")]
     [SerializeField] private GameObject[] permanentUpgradePrefabs;
 
+    [Header("Transizioni")]
+    // Le porte vengono riattivate quando la stanza si libera: se il player è
+    // fermo sopra una porta, il suo trigger scatterebbe subito. Per questo
+    // ogni cambio stanza e ogni sblocco ignorano le porte per qualche frame.
+    [SerializeField] private float doorIgnoreDelay = 0.25f;
+
     private GameObject currentRoom;
     private int enemiesRemaining;
+    private bool roomCleared;
+    private bool victoryShown;
+    private float doorIgnoreTimer;
 
     private void Awake()
     {
@@ -27,49 +36,90 @@ public class RoomManager : MonoBehaviour
 
     private void Start()
     {
-        currentRoom = startingRoom;
-        ActivateOnly(currentRoom);
+        if (startingRoom == null)
+        {
+            Debug.LogWarning("Assegna startingRoom nell'Inspector.");
+            return;
+        }
 
-        enemiesRemaining = CountEnemiesInRoom(currentRoom);
-        SetDoorsActive(currentRoom, enemiesRemaining <= 0);
+        EnterRoom(startingRoom);
+    }
+
+    private void Update()
+    {
+        // unscaled: il tempo si ferma sulle schermate di fine partita
+        if (doorIgnoreTimer > 0f) doorIgnoreTimer -= Time.unscaledDeltaTime;
     }
 
     public void GoToRoom(GameObject newRoom, Vector2 playerSpawnPosition)
     {
-        ActivateOnly(newRoom);
-        currentRoom = newRoom;
+        if (newRoom == null || doorIgnoreTimer > 0f) return;
+
+        EnterRoom(newRoom);
 
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player != null)
         {
             player.transform.position = playerSpawnPosition;
         }
+    }
 
-        enemiesRemaining = CountEnemiesInRoom(newRoom);
-        SetDoorsActive(newRoom, enemiesRemaining <= 0);
+    private void EnterRoom(GameObject room)
+    {
+        ActivateOnly(room);
+        currentRoom = room;
+        doorIgnoreTimer = doorIgnoreDelay;
+
+        enemiesRemaining = CountEnemiesInRoom(room);
+        roomCleared = enemiesRemaining <= 0;
+
+        SetDoorsActive(room, roomCleared);
+
+        // Una stanza finale già vuota (o ripulita in una visita precedente)
+        // deve comunque far vincere la partita
+        if (roomCleared) CheckVictory();
     }
 
     public void RegisterEnemyDeath()
-{
-    enemiesRemaining--;
-
-    if (enemiesRemaining <= 0)
     {
-        SetDoorsActive(currentRoom, true);
-        SpawnRandomPickup(currentRoom);
+        if (enemiesRemaining > 0) enemiesRemaining--;
 
-        // La partita si vince ripulendo la stanza finale, non solo uccidendo il boss
-        if (currentRoom == finalRoom && GameManager.Instance != null)
+        // roomCleared evita che un conteggio sfasato faccia cadere più pickup
+        if (enemiesRemaining > 0 || roomCleared || currentRoom == null) return;
+
+        roomCleared = true;
+        SetDoorsActive(currentRoom, true);
+        doorIgnoreTimer = doorIgnoreDelay;
+
+        SpawnRandomPickup(currentRoom);
+        CheckVictory();
+    }
+
+    public void RegisterEnemySpawn(int amount)
+    {
+        if (amount <= 0) return;
+
+        enemiesRemaining += amount;
+
+        // Se la stanza risultava già libera, va richiusa
+        if (roomCleared && currentRoom != null)
+        {
+            roomCleared = false;
+            SetDoorsActive(currentRoom, false);
+        }
+    }
+
+    private void CheckVictory()
+    {
+        if (victoryShown || finalRoom == null || currentRoom != finalRoom) return;
+
+        victoryShown = true;
+
+        if (GameManager.Instance != null)
         {
             GameManager.Instance.ShowVictory();
         }
     }
-}
-
-    public void RegisterEnemySpawn(int amount)
-{
-    enemiesRemaining += amount;
-}
 
     public void SpawnRandomPermanentUpgrade(Vector3 position, GameObject parentRoom)
     {
@@ -78,7 +128,8 @@ public class RoomManager : MonoBehaviour
         int index = Random.Range(0, permanentUpgradePrefabs.Length);
         GameObject chosenUpgrade = permanentUpgradePrefabs[index];
 
-        Instantiate(chosenUpgrade, position, Quaternion.identity, parentRoom.transform);
+        Transform parent = parentRoom != null ? parentRoom.transform : null;
+        Instantiate(chosenUpgrade, position, Quaternion.identity, parent);
     }
 
     private void ActivateOnly(GameObject roomToActivate)
@@ -102,27 +153,42 @@ public class RoomManager : MonoBehaviour
         Instantiate(chosenPickup, spawnPosition, Quaternion.identity, room.transform);
     }
 
+    // Porte e nemici vengono cercati a qualsiasi profondità: così restano
+    // validi anche se in futuro vengono raggruppati in un contenitore
     private void SetDoorsActive(GameObject room, bool active)
     {
-        foreach (Transform child in room.transform)
+        SetDoorsActive(room.transform, active);
+    }
+
+    private void SetDoorsActive(Transform parent, bool active)
+    {
+        foreach (Transform child in parent)
         {
             if (child.CompareTag("Door"))
             {
                 child.gameObject.SetActive(active);
+                continue; // una porta non contiene altre porte
             }
+
+            SetDoorsActive(child, active);
         }
     }
 
     private int CountEnemiesInRoom(GameObject room)
     {
+        return CountEnemies(room.transform);
+    }
+
+    private int CountEnemies(Transform parent)
+    {
         int count = 0;
-        foreach (Transform child in room.transform)
+
+        foreach (Transform child in parent)
         {
-            if (child.CompareTag("Enemy"))
-            {
-                count++;
-            }
+            if (child.CompareTag("Enemy")) count++;
+            count += CountEnemies(child);
         }
+
         return count;
     }
 }

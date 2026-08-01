@@ -56,6 +56,7 @@ public class PlayerController : MonoBehaviour
     [Header("Feedback")]
     [SerializeField] private Transform meleeVisual;
     [SerializeField] private float meleeVisualDuration = 0.1f;
+    [SerializeField] private PlayerVisuals playerVisuals;
 
 
     private enum WeaponType { Single, Spread, Piercing, Melee }
@@ -63,11 +64,13 @@ public class PlayerController : MonoBehaviour
     private SpriteRenderer sr;
     private Rigidbody2D rb;
     private Vector2 moveInput;
+    private Vector2 lastAimDirection = Vector2.right;
     private float fireTimer;
     private int currentHealth;
     private int currentBombs;
     private float bombTimer;
     private bool isInvulnerable;
+    private bool isDead;
     private float invulnerabilityTimer;
     private float healthRegenTimer;
     private Color baseSpriteColor;
@@ -90,6 +93,10 @@ public class PlayerController : MonoBehaviour
 
     private void Update()
     {
+        // Time.timeScale = 0 ferma la fisica ma non Update(): senza questo
+        // si può ancora sparare e cambiare arma dalle schermate di fine partita
+        if (isDead || Time.timeScale == 0f) return;
+
         HandleInput();
         HandleWeaponSwitch();
         HandleFiring();
@@ -163,10 +170,15 @@ public class PlayerController : MonoBehaviour
 
         Vector2 aimDirection = GetCardinalAimDirection();
 
-        if (aimDirection != Vector2.zero && fireTimer <= 0f)
+        if (aimDirection != Vector2.zero)
         {
-            Fire(aimDirection);
-            fireTimer = GetCurrentCooldown();
+            lastAimDirection = aimDirection;
+
+            if (fireTimer <= 0f)
+            {
+                Fire(aimDirection);
+                fireTimer = GetCurrentCooldown();
+            }
         }
     }
 
@@ -194,7 +206,9 @@ public class PlayerController : MonoBehaviour
         return;
     }
 
-    Vector2 origin = (Vector2)transform.position + direction * firePointDistance;
+    Vector2 origin = playerVisuals != null
+        ? playerVisuals.MuzzlePosition
+        : (Vector2)transform.position + direction * firePointDistance;
 
     switch (currentWeapon)
     {
@@ -206,8 +220,8 @@ public class PlayerController : MonoBehaviour
         case WeaponType.Spread:
             if (AudioManager.Instance != null) AudioManager.Instance.PlayShootSpread();
             SpawnProjectile(origin, direction, false, spreadLifetime);
-            SpawnProjectile(origin, Rotate(direction, spreadAngle), false, spreadLifetime);
-            SpawnProjectile(origin, Rotate(direction, -spreadAngle), false, spreadLifetime);
+            SpawnProjectile(origin, VectorUtils.Rotate(direction, spreadAngle), false, spreadLifetime);
+            SpawnProjectile(origin, VectorUtils.Rotate(direction, -spreadAngle), false, spreadLifetime);
             break;
 
         case WeaponType.Piercing:
@@ -241,21 +255,8 @@ public class PlayerController : MonoBehaviour
         projRb.linearVelocity = direction * projectileSpeed;
     }
 
-    float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
-    projectile.transform.rotation = Quaternion.Euler(0, 0, angle);
+    projectile.transform.rotation = Quaternion.Euler(0, 0, VectorUtils.ToAngle(direction));
 }
-
-    private Vector2 Rotate(Vector2 direction, float degrees)
-    {
-        float rad = degrees * Mathf.Deg2Rad;
-        float cos = Mathf.Cos(rad);
-        float sin = Mathf.Sin(rad);
-
-        return new Vector2(
-            direction.x * cos - direction.y * sin,
-            direction.x * sin + direction.y * cos
-        );
-    }
 
     private void MeleeAttack(Vector2 direction)
     {
@@ -292,8 +293,7 @@ public class PlayerController : MonoBehaviour
 
     private System.Collections.IEnumerator ShowMeleeVisual(Vector2 direction)
     {
-        float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
-        meleeVisual.rotation = Quaternion.Euler(0, 0, angle);
+        meleeVisual.rotation = Quaternion.Euler(0, 0, VectorUtils.ToAngle(direction));
         meleeVisual.localPosition = direction * 0.7f;
 
         meleeVisual.gameObject.SetActive(true);
@@ -351,7 +351,7 @@ public class PlayerController : MonoBehaviour
 
     public void TakeDamage(int amount)
 {
-    if (isInvulnerable) return;
+    if (isInvulnerable || isDead) return;
 
     currentHealth -= amount;
     UpdateHealthUI();
@@ -387,6 +387,10 @@ public class PlayerController : MonoBehaviour
 
     private void Die()
     {
+        isDead = true;
+        moveInput = Vector2.zero;
+        if (rb != null) rb.linearVelocity = Vector2.zero;
+
         Debug.Log("Game Over");
 
         if (GameManager.Instance != null)
@@ -514,4 +518,10 @@ public class PlayerController : MonoBehaviour
 
         moveSpeed -= bonus;
     }
+
+    // Sola lettura, per l'animazione (PlayerVisuals)
+    public Vector2 MoveInput => moveInput;
+    public Vector2 AimInput => GetCardinalAimDirection();
+    public Vector2 LastAimDirection => lastAimDirection;
+    public int CurrentWeaponIndex => (int)currentWeapon;
 }

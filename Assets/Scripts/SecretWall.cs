@@ -8,7 +8,9 @@ public class SecretWall : MonoBehaviour
 
     private bool isRevealed = false;
 
-    public void Destroy()
+    // NB: non chiamare questo metodo "Destroy": nasconderebbe Object.Destroy
+    // dentro questa classe e renderebbe impossibile chiamarlo senza qualificarlo.
+    public void Reveal()
 {
     if (isRevealed) return;
 
@@ -37,7 +39,7 @@ public class SecretWall : MonoBehaviour
     {
         if (!isRevealed) return; // il muro deve essere già stato rotto dalla bomba
 
-        if (other.CompareTag("Player"))
+        if (other.CompareTag("Player") && RoomManager.Instance != null && targetRoom != null)
         {
             RoomManager.Instance.GoToRoom(targetRoom, playerSpawnPosition);
         }

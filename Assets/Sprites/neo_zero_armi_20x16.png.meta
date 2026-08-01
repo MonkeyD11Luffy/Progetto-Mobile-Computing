@@ -1,16 +1,19 @@
 fileFormatVersion: 2
-guid: 28bf120fc49060ac18a8187bcd9d6ade
+guid: 37581a7f821ffe409b8325e956724c36
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -164408490194247490
-    second: neo_zero_tiles_and_buildings_01 1_0
+      213: 562609031598025648
+    second: neo_zero_armi_20x16_0
   - first:
-      213: -6799476624174838905
-    second: neo_zero_tiles_and_buildings_01 1_1
+      213: -9200470934632031342
+    second: neo_zero_armi_20x16_1
   - first:
-      213: 937730368650042043
-    second: neo_zero_tiles_and_buildings_01 1_2
+      213: -7478035693025529547
+    second: neo_zero_armi_20x16_2
+  - first:
+      213: 6070737466497585836
+    second: neo_zero_armi_20x16_3
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -119,67 +122,89 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: neo_zero_tiles_and_buildings_01 1_0
+      name: neo_zero_armi_20x16_0
       rect:
         serializedVersion: 2
-        x: 47
-        y: 159
-        width: 180
-        height: 136
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: eb0e9e76957e7bdf0800000000000000
-      internalID: -164408490194247490
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: neo_zero_tiles_and_buildings_01 1_1
-      rect:
-        serializedVersion: 2
-        x: 175
-        y: 287
-        width: 145
-        height: 18
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 78b8c75190863a1a0800000000000000
-      internalID: -6799476624174838905
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: neo_zero_tiles_and_buildings_01 1_2
-      rect:
-        serializedVersion: 2
-        x: 47
+        x: 0
         y: 0
-        width: 242
-        height: 145
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        width: 20
+        height: 16
+      alignment: 9
+      pivot: {x: 0.225, y: 0.406}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: bba5b7e4dcc730d00800000000000000
-      internalID: 937730368650042043
+      spriteID: 0bba3d3fee9cec700800000000000000
+      internalID: 562609031598025648
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: neo_zero_armi_20x16_1
+      rect:
+        serializedVersion: 2
+        x: 20
+        y: 0
+        width: 20
+        height: 16
+      alignment: 9
+      pivot: {x: 0.225, y: 0.406}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 29b93fe5e6c515080800000000000000
+      internalID: -9200470934632031342
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: neo_zero_armi_20x16_2
+      rect:
+        serializedVersion: 2
+        x: 40
+        y: 0
+        width: 20
+        height: 16
+      alignment: 9
+      pivot: {x: 0.225, y: 0.406}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5317583582ea83890800000000000000
+      internalID: -7478035693025529547
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: neo_zero_armi_20x16_3
+      rect:
+        serializedVersion: 2
+        x: 60
+        y: 0
+        width: 20
+        height: 16
+      alignment: 9
+      pivot: {x: 0.225, y: 0.406}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ca25e37cf879f3450800000000000000
+      internalID: 6070737466497585836
       vertices: []
       indices: 
       edges: []
@@ -188,7 +213,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: 470c647f37f6e304ead0a5b04ba4a2c9
     internalID: 0
     vertices: []
     indices: 
@@ -196,11 +221,16 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     spriteCustomMetadata:
-      entries: []
+      entries:
+      - key: SpriteEditor.SliceSettings
+        value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":20.0,"y":16.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.22499999403953553,"y":0.4059999883174896},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":9,"pivotUnitMode":0,"slicingType":1,"keepEmptyRects":false,"isAlternate":false}'
+      - key: SpriteEditor.SliceOnImport
+        value: False
     nameFileIdTable:
-      neo_zero_tiles_and_buildings_01 1_0: -164408490194247490
-      neo_zero_tiles_and_buildings_01 1_1: -6799476624174838905
-      neo_zero_tiles_and_buildings_01 1_2: 937730368650042043
+      neo_zero_armi_20x16_0: 562609031598025648
+      neo_zero_armi_20x16_1: -9200470934632031342
+      neo_zero_armi_20x16_2: -7478035693025529547
+      neo_zero_armi_20x16_3: 6070737466497585836
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

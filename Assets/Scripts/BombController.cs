@@ -32,7 +32,7 @@ public class BombController : MonoBehaviour
             SecretWall secretWall = hit.GetComponent<SecretWall>();
             if (secretWall != null)
             {
-                secretWall.Destroy();
+                secretWall.Reveal();
             }
 
             // Danneggia il player se troppo vicino

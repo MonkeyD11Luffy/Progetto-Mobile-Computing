@@ -20,16 +20,14 @@ public class TeleporterController : EnemyBase
 
     private enum TeleporterState { Idle, Vanishing }
 
-    private SpriteRenderer sr;
     private Collider2D col;
     private TeleporterState currentState;
     private float stateTimer;
 
     protected override void Awake()
     {
-        base.Awake();
+        base.Awake(); // qui viene già preso lo SpriteRenderer
 
-        sr = GetComponent<SpriteRenderer>();
         col = GetComponent<Collider2D>();
     }
 
@@ -77,7 +75,7 @@ public class TeleporterController : EnemyBase
 
     private void SetVisible(bool visible)
     {
-        if (sr != null) sr.enabled = visible;
+        if (spriteRenderer != null) spriteRenderer.enabled = visible;
         if (col != null) col.enabled = visible;
     }
 
@@ -89,10 +87,10 @@ public class TeleporterController : EnemyBase
             ? (Vector2)transform.parent.position
             : Vector2.zero;
 
-        float angle = Random.Range(0f, 360f) * Mathf.Deg2Rad;
+        float angle = Random.Range(0f, 360f);
         float distance = Random.Range(minDistanceFromPlayer, maxDistanceFromPlayer);
 
-        Vector2 offset = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * distance;
+        Vector2 offset = VectorUtils.FromAngle(angle) * distance;
         Vector2 targetPosition = (Vector2)player.position + offset;
 
         targetPosition.x = Mathf.Clamp(targetPosition.x, roomCenter.x - roomHalfWidth, roomCenter.x + roomHalfWidth);
@@ -105,7 +103,6 @@ public class TeleporterController : EnemyBase
     {
         if (player == null) return;
 
-        Vector2 direction = ((Vector2)player.position - (Vector2)transform.position).normalized;
-        SpawnProjectile(projectilePrefab, transform.position, direction, projectileSpeed);
+        SpawnProjectile(projectilePrefab, transform.position, DirectionToPlayer(), projectileSpeed);
     }
 }

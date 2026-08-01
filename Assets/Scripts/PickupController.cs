@@ -84,6 +84,8 @@ public class PickupController : MonoBehaviour
 
         playerController.ShowUpgradePopup("+" + GetDisplayName());
 
+        if (AudioManager.Instance != null) AudioManager.Instance.PlayPickup();
+
         Destroy(gameObject);
     }
 
