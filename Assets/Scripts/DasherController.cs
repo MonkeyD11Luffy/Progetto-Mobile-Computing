@@ -95,4 +95,13 @@ public class DasherController : EnemyBase
         stateTimer = idleDuration;
         rb.linearVelocity = Vector2.zero;
     }
+
+    protected override void RestoreBaseColor()
+    {
+        if (spriteRenderer == null) return;
+
+        spriteRenderer.color = currentState == DasherState.Telegraph
+            ? telegraphColor
+            : baseSpriteColor;
+    }
 }

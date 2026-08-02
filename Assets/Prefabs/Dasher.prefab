@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 3609640755186310356}
   - component: {fileID: 2427197516648015904}
   - component: {fileID: 7007880647160766225}
+  - component: {fileID: -2196109631793781624}
   m_Layer: 0
   m_Name: Dasher
   m_TagString: Enemy
@@ -85,7 +86,7 @@ SpriteRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
-  m_Color: {r: 0, g: 0.7320416, b: 1, a: 1}
+  m_Color: {r: 0.8113208, g: 0.8113208, b: 0.8113208, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -135,6 +136,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DasherController
   maxHealth: 4
   contactDamage: 2
+  hitFlashDuration: 0.08
+  deathEffectDuration: 0.2
   idleDuration: 1.5
   telegraphDuration: 0.6
   dashDuration: 0.4
@@ -185,5 +188,35 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 1.6, y: 0.9}
   m_EdgeRadius: 0
+--- !u!114 &-2196109631793781624
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8068514365202342125}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8b58d711371d9c189b5d5320a22a8ad1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyVisuals
+  walkDown:
+  - {fileID: -3429511978585746987, guid: cbdfe2b9dbc558d79ad5fede736fa5f6, type: 3}
+  - {fileID: 7443360961271710623, guid: cbdfe2b9dbc558d79ad5fede736fa5f6, type: 3}
+  - {fileID: 946411973577745545, guid: cbdfe2b9dbc558d79ad5fede736fa5f6, type: 3}
+  - {fileID: 5394080206273674061, guid: cbdfe2b9dbc558d79ad5fede736fa5f6, type: 3}
+  walkUp:
+  - {fileID: -8460590405360785665, guid: cbdfe2b9dbc558d79ad5fede736fa5f6, type: 3}
+  - {fileID: -8183278051825525537, guid: cbdfe2b9dbc558d79ad5fede736fa5f6, type: 3}
+  - {fileID: -7533734945731328458, guid: cbdfe2b9dbc558d79ad5fede736fa5f6, type: 3}
+  - {fileID: -7843799647459027780, guid: cbdfe2b9dbc558d79ad5fede736fa5f6, type: 3}
+  walkSide:
+  - {fileID: -6835596826780756758, guid: cbdfe2b9dbc558d79ad5fede736fa5f6, type: 3}
+  - {fileID: -9052992187547547747, guid: cbdfe2b9dbc558d79ad5fede736fa5f6, type: 3}
+  - {fileID: 446340295301592738, guid: cbdfe2b9dbc558d79ad5fede736fa5f6, type: 3}
+  - {fileID: 5016751034002246519, guid: cbdfe2b9dbc558d79ad5fede736fa5f6, type: 3}
+  frameRate: 6
+  idleFrame: 0
+  moveThreshold: 0.01

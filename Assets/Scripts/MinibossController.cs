@@ -70,6 +70,13 @@ public class MinibossController : BossBase
 
     protected override void RestoreBaseColor()
     {
+        // In Telegraph vince il colore di preavviso (gestito da BossBase)
+        if (currentState == BossState.Telegraph)
+        {
+            base.RestoreBaseColor();
+            return;
+        }
+
         if (spriteRenderer != null)
         {
             spriteRenderer.color = IsEnraged() ? enrageColor : baseSpriteColor;

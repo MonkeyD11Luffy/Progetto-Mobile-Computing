@@ -83,8 +83,8 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: -2413806693520163455, guid: a86470a33a6bf42c4b3595704624658b, type: 3}
-  m_Color: {r: 1, g: 0, b: 0.9298854, a: 1}
+  m_Sprite: {fileID: 1490556164656645054, guid: 41bdae218facfa7c89f5a13016beea3a, type: 3}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -109,6 +109,15 @@ MonoBehaviour:
   healAmount: 2
   speedMultiplier: 1.5
   boostDuration: 5
+  bombAmount: 1
+  maxHealthIncrease: 2
+  damageIncrease: 1
+  speedIncrease: 1
+  fireRateIncrease: 0.05
+  healthRegenChanceIncrease: 0.15
+  contactDamageReductionIncrease: 1
+  meleeArcIncrease: 0.15
+  projectileBounceIncrease: 1
 --- !u!58 &7367840624499731439
 CircleCollider2D:
   m_ObjectHideFlags: 0

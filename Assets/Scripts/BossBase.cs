@@ -134,6 +134,20 @@ public abstract class BossBase : EnemyBase
         if (player != null) chargeDirection = DirectionToPlayer();
     }
 
+    // Durante il telegrafo il colore di preavviso ha la precedenza su quello di
+    // base: senza questo, un colpo incassato mentre il boss è in Telegraph
+    // cancellerebbe il preavviso a fine flash.
+    protected override void RestoreBaseColor()
+    {
+        if (spriteRenderer != null && currentState == BossState.Telegraph)
+        {
+            spriteRenderer.color = telegraphColor;
+            return;
+        }
+
+        base.RestoreBaseColor();
+    }
+
     // --- Da implementare nelle sottoclassi ---
 
     // Sceglie l'azione da eseguire a fine telegrafo (e ne prepara i dati)
