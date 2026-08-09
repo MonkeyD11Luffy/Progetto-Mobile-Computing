@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 21b5ea6852094f759939cbd6c9a6a544
+guid: e68fbebea3c15b0c5a30c8ba23c2029f
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 4313045425328203146
-    second: projAI_nemico_12_0
+      213: -4415177532960297504
+    second: projAI_nemico_16_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -37,7 +37,7 @@ TextureImporter:
   maxTextureSize: 2048
   textureSettings:
     serializedVersion: 2
-    filterMode: 1
+    filterMode: 0
     aniso: 1
     mipBias: 0
     wrapU: 1
@@ -46,12 +46,12 @@ TextureImporter:
   nPOTScale: 0
   lightmap: 0
   compressionQuality: 50
-  spriteMode: 2
+  spriteMode: 1
   spriteExtrude: 1
   spriteMeshType: 1
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 100
+  spritePixelsToUnits: 16
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
@@ -75,7 +75,7 @@ TextureImporter:
     maxTextureSize: 2048
     resizeAlgorithm: 0
     textureFormat: -1
-    textureCompression: 1
+    textureCompression: 0
     compressionQuality: 50
     crunchedCompression: 0
     allowsAlphaSplitting: 0
@@ -113,13 +113,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: projAI_nemico_12_0
+      name: projAI_nemico_16_0
       rect:
         serializedVersion: 2
-        x: 2
+        x: 0
         y: 5
-        width: 13
-        height: 6
+        width: 16
+        height: 7
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: a85afcc76f30bdb30800000000000000
-      internalID: 4313045425328203146
+      spriteID: 0edad972d632ab2c0800000000000000
+      internalID: -4415177532960297504
       vertices: []
       indices: 
       edges: []
@@ -138,7 +138,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: 5e97eb03825dee720800000000000000
     internalID: 0
     vertices: []
     indices: 
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      projAI_nemico_12_0: 4313045425328203146
+      projAI_nemico_16_0: -4415177532960297504
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

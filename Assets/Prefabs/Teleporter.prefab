@@ -84,8 +84,8 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
-  m_Color: {r: 0.7175286, g: 0.9529412, b: 0, a: 1}
+  m_Sprite: {fileID: 4024420540613375730, guid: 49853a7fb5a1ab6d08ae3c8d58d76095, type: 3}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -133,13 +133,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 195e2d05cad7fded0a9646fe76acf823, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TeleporterController
+  maxHealth: 2
+  contactDamage: 1
+  hitFlashDuration: 0.08
+  deathEffectDuration: 0.2
   idleDuration: 1.8
   vanishDuration: 0.4
   minDistanceFromPlayer: 2.5
   maxDistanceFromPlayer: 4
+  roomHalfWidth: 3
+  roomHalfHeight: 3
   projectilePrefab: {fileID: 7843852227812731380, guid: 71c61c8e932f2578781c05cd6f9f9aec, type: 3}
   projectileSpeed: 7
-  maxHealth: 2
 --- !u!61 &8228763320018370078
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -178,7 +183,7 @@ BoxCollider2D:
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
-    oldSize: {x: 1, y: 1}
+    oldSize: {x: 1.25, y: 1.5}
     newSize: {x: 1, y: 1}
     adaptiveTilingThreshold: 0.5
     drawMode: 0

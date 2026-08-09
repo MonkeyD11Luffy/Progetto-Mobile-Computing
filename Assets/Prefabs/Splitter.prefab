@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 465457618724656082}
   - component: {fileID: 9050752865966457840}
   - component: {fileID: 9079439606630691238}
+  - component: {fileID: -2930849142278098513}
   m_Layer: 0
   m_Name: Splitter
   m_TagString: Enemy
@@ -181,7 +182,27 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SplitterController
   maxHealth: 8
   contactDamage: 1
+  hitFlashDuration: 0.08
+  deathEffectDuration: 0.2
   moveSpeed: 1.2
   splitPrefab: {fileID: 9221788800551908449, guid: 5d2dc3d92c67a605094e8bf99e4b6ebd, type: 3}
   splitCount: 2
   splitSpread: 0.6
+--- !u!114 &-2930849142278098513
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3688067535531730567}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8b58d711371d9c189b5d5320a22a8ad1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyVisuals
+  walkDown: []
+  walkUp: []
+  walkSide: []
+  frameRate: 6
+  idleFrame: 0
+  moveThreshold: 0.01

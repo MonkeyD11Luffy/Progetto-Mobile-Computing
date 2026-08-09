@@ -163,6 +163,7 @@ GameObject:
   - component: {fileID: 3296156429123209892}
   - component: {fileID: 6246596838727284922}
   - component: {fileID: 4930613821528226406}
+  - component: {fileID: 9207307941860127375}
   m_Layer: 0
   m_Name: MiniBoss
   m_TagString: Enemy
@@ -180,7 +181,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: -2, z: 0}
-  m_LocalScale: {x: 2, y: 2, z: 1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 5081208934882735311}
@@ -235,8 +236,8 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
-  m_Color: {r: 0.5660378, g: 0, b: 0.19694932, a: 1}
+  m_Sprite: {fileID: -3428733604482057245, guid: ff6e1d5f99b88ea768e65344217f36f4, type: 3}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -310,13 +311,13 @@ BoxCollider2D:
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
-    oldSize: {x: 1, y: 1}
+    oldSize: {x: 2, y: 1.5}
     newSize: {x: 1, y: 1}
     adaptiveTilingThreshold: 0.5
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 1.6, y: 1.3}
   m_EdgeRadius: 0
 --- !u!114 &4930613821528226406
 MonoBehaviour:
@@ -340,9 +341,6 @@ MonoBehaviour:
   telegraphColor: {r: 1, g: 1, b: 1, a: 1}
   projectilePrefab: {fileID: 7843852227812731380, guid: 71c61c8e932f2578781c05cd6f9f9aec, type: 3}
   projectileSpeed: 5
-  projectilesPerBurst: 5
-  aimedBurstCount: 3
-  aimedSpread: 12
   chargeSpeed: 7
   chargeDuration: 0.4
   enrageHealthRatio: 0.4
@@ -352,6 +350,39 @@ MonoBehaviour:
   healthBarRoot: {fileID: 3050016494842750956}
   deathShakeDuration: 0.25
   deathShakeMagnitude: 0.12
+  projectilesPerBurst: 5
+  aimedBurstCount: 3
+  aimedSpread: 12
+--- !u!114 &9207307941860127375
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4112583604675842602}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8b58d711371d9c189b5d5320a22a8ad1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyVisuals
+  walkDown:
+  - {fileID: -3428733604482057245, guid: ff6e1d5f99b88ea768e65344217f36f4, type: 3}
+  - {fileID: 6866083590777962055, guid: ff6e1d5f99b88ea768e65344217f36f4, type: 3}
+  - {fileID: 6979210767977914877, guid: ff6e1d5f99b88ea768e65344217f36f4, type: 3}
+  - {fileID: 7855290724658516980, guid: ff6e1d5f99b88ea768e65344217f36f4, type: 3}
+  walkUp:
+  - {fileID: 4405339542923393645, guid: ff6e1d5f99b88ea768e65344217f36f4, type: 3}
+  - {fileID: 4023714875672994367, guid: ff6e1d5f99b88ea768e65344217f36f4, type: 3}
+  - {fileID: -4358136457028450122, guid: ff6e1d5f99b88ea768e65344217f36f4, type: 3}
+  - {fileID: 6673603203674300739, guid: ff6e1d5f99b88ea768e65344217f36f4, type: 3}
+  walkSide:
+  - {fileID: -3004939320289359873, guid: ff6e1d5f99b88ea768e65344217f36f4, type: 3}
+  - {fileID: -6580461613902318584, guid: ff6e1d5f99b88ea768e65344217f36f4, type: 3}
+  - {fileID: -7290934371695931588, guid: ff6e1d5f99b88ea768e65344217f36f4, type: 3}
+  - {fileID: 7219054446212510586, guid: ff6e1d5f99b88ea768e65344217f36f4, type: 3}
+  frameRate: 6
+  idleFrame: 0
+  moveThreshold: 0.01
 --- !u!1 &5759167264061280377
 GameObject:
   m_ObjectHideFlags: 0

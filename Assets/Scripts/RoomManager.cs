@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 
 public class RoomManager : MonoBehaviour
 {
@@ -16,6 +17,10 @@ public class RoomManager : MonoBehaviour
 
     [Header("Potenziamenti Permanenti")]
     [SerializeField] private GameObject[] permanentUpgradePrefabs;
+
+    [Header("Camera")]
+    [SerializeField] private PixelPerfectCamera pixelPerfectCamera;
+    [SerializeField] private Vector2Int defaultReferenceResolution = new Vector2Int(240, 135);
 
     [Header("Transizioni")]
     // Le porte vengono riattivate quando la stanza si libera: se il player è
@@ -67,6 +72,7 @@ public class RoomManager : MonoBehaviour
     private void EnterRoom(GameObject room)
     {
         ActivateOnly(room);
+        ApplyCameraFor(room);
         currentRoom = room;
         doorIgnoreTimer = doorIgnoreDelay;
 
@@ -130,6 +136,21 @@ public class RoomManager : MonoBehaviour
 
         Transform parent = parentRoom != null ? parentRoom.transform : null;
         Instantiate(chosenUpgrade, position, Quaternion.identity, parent);
+    }
+
+    // Ogni stanza può chiedere una risoluzione di riferimento diversa
+    // aggiungendo un RoomCameraSettings; senza, vale quella di default.
+    private void ApplyCameraFor(GameObject room)
+    {
+        if (pixelPerfectCamera == null) return;
+
+        Vector2Int resolution = defaultReferenceResolution;
+
+        RoomCameraSettings settings = room.GetComponent<RoomCameraSettings>();
+        if (settings != null) resolution = settings.ReferenceResolution;
+
+        pixelPerfectCamera.refResolutionX = resolution.x;
+        pixelPerfectCamera.refResolutionY = resolution.y;
     }
 
     private void ActivateOnly(GameObject roomToActivate)

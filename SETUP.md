@@ -1,416 +1,943 @@
-# SETUP — Stato attuale di scena e prefab
+# SETUP — stato attuale della scena e degli asset
 
-Documento generato tramite parsing diretto dei file YAML di Unity (`Assets/Scenes/SampleScene.unity`, `ProjectSettings/TagManager.asset`, `Assets/Prefabs/*.prefab`), seguendo i riferimenti `fileID`/`guid` per ricostruire gerarchia, componenti e campi serializzati. È puramente descrittivo: nessuna proposta, nessun giudizio.
+Documento generato leggendo direttamente lo YAML di `Assets/Scenes/SampleScene.unity`,
+`ProjectSettings/TagManager.asset`, tutti i `.prefab` in `Assets/Prefabs/` e tutti gli
+script in `Assets/Scripts/`.
 
-Rigenerato dopo il refactoring degli script (introduzione di `BossBase`, `VectorUtils`, `PlayerVisuals` e rinomina di `TeleporterController` / `MinibossController`) e dopo la revisione della scena in Unity.
+Descrive **solo lo stato attuale**: nessuna proposta di modifica.
 
-> **Nota di lettura sui campi non serializzati.** Unity scrive nel file YAML solo i campi esistenti al momento dell'ultimo salvataggio. Diversi campi aggiunti di recente agli script **non compaiono** in scena/prefab: a runtime prendono il valore di default dello script. Sono segnalati caso per caso e riepilogati nella sezione 5.
+> Nota sullo snapshot: durante la lettura l'editor Unity era aperto e ha rinominato
+> `neo_zero_shielded_64x48 1.png` in `neo_zero_shielded_96x72.png` e aggiornato
+> `Shielded.prefab` e `Teleporter.prefab`. Quanto segue riflette lo stato **dopo**
+> quelle modifiche.
 
 ---
 
-## 1. Gerarchia della scena
+## 1. Gerarchia delle stanze
 
-Root della scena (8 oggetti top-level):
+Tutte le stanze sono figlie dirette di `RoomManager` e nella scena salvata sono
+**tutte disattivate** (`m_IsActive: 0`): è `RoomManager.EnterRoom()` ad attivarne una
+sola a runtime, partendo da `startingRoom`.
 
-```
-Main Camera        [MainCamera]  Camera, CameraShake, AudioListener, (+1 script di pacchetto)
-Player             [Player]      SpriteRenderer, Rigidbody2D, BoxCollider2D, PlayerController, PlayerVisuals
-├── MeleeVisual    [Untagged]    SpriteRenderer
-└── WeaponPivot    [Untagged]    SpriteRenderer
-Global Light 2D    [Untagged]    (script di pacchetto URP)
-AudioManager       [Untagged]    AudioManager
-├── SFX_source     [Untagged]    AudioSource
-└── Music_source   [Untagged]    AudioSource
-EventSystem        [Untagged]    (script di pacchetto)
-RoomManager        [Untagged]    RoomManager
-└── 8 stanze (vedi sotto)
-Canvas             [Untagged]    Canvas, CanvasScaler, GraphicRaycaster
-GameManager        [Untagged]    GameManager
-```
+Ordine dei figli di `RoomManager`:
+`Room_1` · `Room_Secret` · `Room_2` · `Room_3` · `Room_4` · `Room_5` · `MiniBoss_Room` · `Boss_Room`
 
-### RoomManager
+Convenzioni ricorrenti (valgono ovunque salvo dove indicato):
 
-Componente `RoomManager` sul GameObject **RoomManager** (`fileID 1684176008`, MonoBehaviour `1684176009`). Campi serializzati:
+- I muri hanno tag `Wall`, un `SpriteRenderer` e un `BoxCollider2D` non-trigger
+  (`m_IsTrigger: 0`, `m_Offset: {0, 0}`, `m_EdgeRadius: 0`).
+- I muri verticali sono ruotati di 90° (`m_LocalRotation z=0.7071068, w=0.7071068`).
+- Le porte hanno tag `Door`, `BoxCollider2D` **trigger** con `Size {1, 1}`,
+  Scale `{1, 1, 1}` e un `DoorTrigger`.
+- Il pavimento è `Grid` (`m_CellSize {1, 1, 0}`, gap 0, layout 0) con figlio `Floor`
+  che porta `Tilemap` + `TilemapRenderer` (`m_SortingOrder: -10`).
+- I nemici sono **istanze di prefab**, con tag `Enemy` ereditato dal prefab.
 
-- `startingRoom`: `{fileID: 1767393748}` → **Room_1**
-- `finalRoom`: `{fileID: 504927612}` → **Boss_Room**
-- `pickupPrefabs`: `Pickup_Heal`, `Pickup_Speed`, `Pickup_Bomb`
-- `pickupDropChance`: `0.35`
-- `permanentUpgradePrefabs`: 8 elementi (`Pickup_MaxHealthUp`, `Pickup_DamageUp`, `Pickup_SpeedUp`, `Pickup_FireRateUp`, `HealthRegen`, `MeleeArcUp`, `PickUp_ArmorUp`, `ProjectileBounceUp`)
-- `doorIgnoreDelay`: **non serializzato** → default dello script `0.25`
+Esistono **due schemi di dimensionamento dei muri** in uso:
 
-Il Transform di RoomManager ha 8 figli diretti, cioè le 8 stanze, nell'ordine serializzato:
+| Schema | Dove | Transform Scale | BoxCollider2D Size | SpriteRenderer |
+|---|---|---|---|---|
+| A — dimensione nel collider | solo `Room_1` | `{1, 1, 1}` | `{8, 0.5}` | DrawMode Tiled/Sliced, `m_Size {8, 0.5}` |
+| B — dimensione nella Scale | tutte le altre stanze | `{L, 0.5, 1}` | `{1, 1}` | DrawMode Simple, `m_Size {1, 1}` |
 
-`Room_1`, `Room_Secret`, `Room_2`, `Room_3`, `Room_4`, `Room_5`, `MiniBoss_Room`, `Boss_Room`
+---
 
-Tutte le stanze hanno `m_IsActive: 0` nel file di scena (disattivate finché `RoomManager` non le attiva a runtime).
+### Room_1 — stanza iniziale (`startingRoom`)
 
-**Tutti i 14 nemici in scena sono Prefab Instance**: non esistono più nemici come GameObject completi con campi serializzati nella scena (a differenza della versione precedente di questo documento). Tag e valori sono quindi quelli del prefab sorgente; l'unico override è la posizione locale (e il nome, per i duplicati).
+Transform: Position `{0, 0, 0}`, Scale `{1, 1, 1}`.
+Nessun `RoomCameraSettings` → usa `defaultReferenceResolution` (240×135).
+**Nessun nemico** → la stanza risulta già libera all'ingresso.
 
-### Contenuto delle stanze
+Muri (schema A — Scale sempre `{1, 1, 1}`, dimensione nel collider):
 
-| Stanza | fileID GO | Nemici (prefab, posizione locale) | Porte |
+| Oggetto | Position | Scale | BoxCollider2D Size | Note |
+|---|---|---|---|---|
+| `Wall_Secret` | `{0, 3.9976, 0}` | `{1, 1, 1}` | `{8, 0.5}` | sostituisce il muro superiore; DrawMode Tiled |
+| `Wall_Left` | `{-4, -0.0024, 0}` | `{1, 1, 1}` | `{8, 0.5}` | ruotato 90°; `m_SortingOrder: -1` |
+| `Wall_Bottom` | `{0, -4.0024, 0}` | `{1, 1, 1}` | `{8, 0.5}` | DrawMode Tiled |
+| `Wall_Right` | `{4, -0.0024, 0}` | `{1, 1, 1}` | `{8, 0.5}` | ruotato 90°; DrawMode **Sliced** (gli altri Tiled) |
+
+`Wall_Secret` porta anche uno `SecretWall`:
+
+- `targetRoom` → `Room_Secret`
+- `playerSpawnPosition` → `{0, -2.9}`
+
+Pavimento: `Grid` (unica stanza in cui si chiama `Grid` e non `Grid (1)`) → `Floor`
+Tilemap `m_Size {8, 8, 1}`, `m_Origin {-4, -4, 0}`, **64 tile**.
+
+Porte:
+
+| Porta | Position | targetRoom | playerSpawnPosition |
 |---|---|---|---|
-| Room_1 | 1767393748 | — | `Door_ToRoom2` → Room_2, spawn `(-2.8, 0)` |
-| Room_Secret | 868803657 | — | `Door_ToRoom2` → **Room_1**, spawn `(0, 3)` |
-| Room_2 | 1395311197 | Teleporter `(-2,-3)`, Walker `(3,3)`, Shielded `(3,-3)` | `Door_ToRoom1` → Room_1 `(2.8, 0)` · `Door_ToRoom3` → Room_3 `(0, -2.8)` · `Door_ToRoom4` → Room_4 `(-2.9, 0)` · `Door_ToRoom5` → Room_5 `(0, 2.8)` |
-| Room_3 | 1536868149 | Turret `(3,3)`, Turret (1) `(-3,3)`, Walker `(0,2)` | `Door_ToRoom2` → Room_2 `(0, 2.8)` |
-| Room_4 | 142039400 | Splitter `(2,1)`, Turret `(3,-3)`, Walker `(-1,3)` | `Door_ToRoom2` → Room_2 `(2.9, 0)` |
-| Room_5 | 1686258021 | Dasher `(-3,-2)`, Dasher (1) `(2,-2)`, Teleporter `(0,0)` | `Door_ToRoom2` → Room_2 `(0, -2.8)` · `Door_ToMiniBoss` → MiniBoss_Room `(0, 2.8)` |
-| MiniBoss_Room | 29436066 | MiniBoss `(0,0)` | `Door_ToRoom5` → Room_5 `(0, -2.9)` · `Door_ToBossRoom` → Boss_Room `(0, 2.9)` |
-| Boss_Room | 504927612 | Boss `(0,0)` | `Door_ToMiniBoss` → MiniBoss_Room `(0, -2.9)` |
+| `Door_ToRoom2` | `{4, 0, 0}` | `Room_2` | `{-2.8, 0}` |
 
-La posizione indicata per le porte è `playerSpawnPosition`, cioè dove viene teletrasportato il player **nella stanza di destinazione**.
+---
 
-Ogni stanza ha inoltre i muri (`Wall_Top` / `Wall_Left` / `Wall_Bottom` / `Wall_Right`, tag `Wall`, SpriteRenderer + BoxCollider2D); Room_1 ha in più `Wall_Secret` con il componente **SecretWall** (`targetRoom` → Room_Secret, `playerSpawnPosition (0, -2.9)`).
+### Room_Secret
 
-Anomalia riportata così com'è serializzata: in Room_Secret l'oggetto si chiama `Door_ToRoom2` ma il campo `targetRoom` risolve a **Room_1**.
+Transform: Position `{0, 0, 0}`, Scale `{1, 1, 1}`. Nessun `RoomCameraSettings`.
+**Nessun nemico.** Vi si accede solo rompendo `Room_1/Wall_Secret` con una bomba.
+
+Muri (schema B — collider sempre `Size {1, 1}`):
+
+| Oggetto | Position | Scale | BoxCollider2D Size |
+|---|---|---|---|
+| `Wall_Top` | `{0, 3.9976, 0}` | `{8, 0.5, 1}` | `{1, 1}` |
+| `Wall_Left` | `{-4, -0.0024, 0}` | `{8, 0.5, 1}` | `{1, 1}` |
+| `Wall_Bottom` | `{0, -4.0024, 0}` | `{8, 0.5, 1}` | `{1, 1}` |
+| `Wall_Right` | `{4, -0.0024, 0}` | `{8, 0.5, 1}` | `{1, 1}` |
+
+Pavimento: `Grid (1)` → `Floor`, Tilemap `{8, 8, 1}`, origin `{-4, -4, 0}`, **64 tile**.
+
+Porte:
+
+| Porta | Position | targetRoom | playerSpawnPosition |
+|---|---|---|---|
+| `Door_ToRoom1` | `{0, -4, 0}` | `Room_1` | `{0, 2.8}` |
+
+---
+
+### Room_2 — snodo centrale
+
+Transform: Position `{0, 0, 0}`, Scale `{1, 1, 1}`. Nessun `RoomCameraSettings`.
+
+Muri (schema B): `Wall_Top` `{0, 3.9976, 0}` · `Wall_Left` `{-4, -0.0024, 0}` ·
+`Wall_Bottom` `{0, -4.0024, 0}` · `Wall_Right` `{4, -0.0024, 0}` —
+tutti Scale `{8, 0.5, 1}`, BoxCollider2D `Size {1, 1}`.
+
+Pavimento: `Grid (1)` → `Floor`, Tilemap `{8, 8, 1}`, origin `{-4, -4, 0}`, **64 tile**.
+
+Porte (4, il numero più alto della scena):
+
+| Porta | Position | targetRoom | playerSpawnPosition |
+|---|---|---|---|
+| `Door_ToRoom1` | `{-4, -0.0024, 0}` | `Room_1` | `{2.8, 0}` |
+| `Door_ToRoom3` | `{0, 4, 0}` | `Room_3` | `{0, -2.8}` |
+| `Door_ToRoom4` | `{4, 0, 0}` | `Room_4` | `{-2.9, 0}` |
+| `Door_ToRoom5` | `{0, -4, 0}` | `Room_5` | `{0, 2.8}` |
+
+Nemici (3):
+
+| Oggetto | Prefab | Position | Override rispetto al prefab |
+|---|---|---|---|
+| `Teleporter` | `Teleporter.prefab` | `{-2, -3, 0}` | `BoxCollider2D.m_Size` → `{1.2, 1.6}` |
+| `Walker` | `Walker.prefab` | `{3, 3, 0}` | nessuno |
+| `Shielded` | `Shielded.prefab` | `{3, -3, 0}` | `m_LocalScale.x` → `0.6`; `m_IsActive` → `1` |
+
+---
+
+### Room_3
+
+Transform: Position `{0, 0, 0}`, Scale `{1, 1, 1}`. Nessun `RoomCameraSettings`.
+
+Muri (schema B): `Wall_Top` `{0, 3.9976, 0}` · `Wall_Left` `{-4, -0.0024, 0}` ·
+`Wall_Bottom` `{0, -4.0024, 0}` · `Wall_Right` `{4, -0.0024, 0}` —
+Scale `{8, 0.5, 1}`, collider `Size {1, 1}`.
+
+Pavimento: `Grid (1)` → `Floor`, Tilemap `{8, 8, 1}`, origin `{-4, -4, 0}`, **64 tile**.
+
+Porte:
+
+| Porta | Position | targetRoom | playerSpawnPosition |
+|---|---|---|---|
+| `Door_ToRoom2` | `{0, -4, 0}` | `Room_2` | `{0, 2.8}` |
+
+Nemici (3): `Turret` `{3, 3, 0}` · `Turret (1)` `{-3, 3, 0}` · `Walker` `{0, 2, 0}` —
+nessun override oltre alla posizione.
+
+---
+
+### Room_4
+
+Transform: Position `{0, 0, 0}`, Scale `{1, 1, 1}`. Nessun `RoomCameraSettings`.
+
+Muri (schema B): `Wall_Top` `{0, 3.9976, 0}` · `Wall_Left` `{-4, -0.0024, 0}` ·
+`Wall_Bottom` `{0, -4.0024, 0}` · `Wall_Right` `{4, -0.0024, 0}` —
+Scale `{8, 0.5, 1}`, collider `Size {1, 1}`.
+
+Pavimento: `Grid (1)` → `Floor`, Tilemap `{8, 8, 1}`, origin `{-4, -4, 0}`, **64 tile**.
+
+Porte:
+
+| Porta | Position | targetRoom | playerSpawnPosition |
+|---|---|---|---|
+| `Door_ToRoom2` | `{-4, 0, 0}` | `Room_2` | `{2.9, 0}` |
+
+Nemici (3):
+
+| Oggetto | Prefab | Position | Override |
+|---|---|---|---|
+| `Splitter` | `Splitter.prefab` | `{2, 1, 0}` | `m_IsActive` → `1` |
+| `Turret` | `Turret.prefab` | `{3, -3, 0}` | nessuno |
+| `Walker` | `Walker.prefab` | `{-1, 3, 0}` | nessuno |
+
+---
+
+### Room_5
+
+Transform: Position `{0, 0, 0}`, Scale `{1, 1, 1}`. Nessun `RoomCameraSettings`.
+
+Muri (schema B): `Wall_Top` `{0, 3.9976, 0}` · `Wall_Left` `{-4, -0.0024, 0}` ·
+`Wall_Bottom` `{0, -4.0024, 0}` · `Wall_Right` `{4, -0.0024, 0}` —
+Scale `{8, 0.5, 1}`, collider `Size {1, 1}`.
+
+Pavimento: `Grid (1)` a Position `{0, -0.0024, 0}` → `Floor`,
+Tilemap `{8, 8, 1}`, origin `{-4, -4, 0}`, **64 tile**.
+
+Porte:
+
+| Porta | Position | targetRoom | playerSpawnPosition |
+|---|---|---|---|
+| `Door_ToRoom2` | `{0, 4, 0}` | `Room_2` | `{0, -2.8}` |
+| `Door_ToMiniBoss` | `{0, -4, 0}` | `MiniBoss_Room` | `{0, 2.8}` |
+
+Nemici (3): `Dasher` `{-3, -2, 0}` · `Teleporter` `{0, 0, 0}` · `Dasher (1)` `{2, -2, 0}` —
+nessun override oltre alla posizione.
+
+---
+
+### MiniBoss_Room — stanza larga
+
+Transform: Position `{0, 0, 0}`, Scale `{1, 1, 1}`. Nessun `RoomCameraSettings`
+(resta quindi a 240×135, pur essendo larga 12 unità).
+
+Muri (schema B, stanza 12×8):
+
+| Oggetto | Position | Scale | BoxCollider2D Size |
+|---|---|---|---|
+| `Wall_Top` | `{0, 4, 0}` | `{12, 0.5, 1}` | `{1, 1}` |
+| `Wall_Left` | `{-6, 0, 0}` | `{8, 0.5, 1}` | `{1, 1}` |
+| `Wall_Bottom` | `{0, -4, 0}` | `{12, 0.5, 1}` | `{1, 1}` |
+| `Wall_Right` | `{6, 0, 0}` | `{8, 0.5, 1}` | `{1, 1}` |
+
+Pavimento: `Grid (1)` a Position `{0, -0.0024, 0}` → `Floor`,
+Tilemap `m_Size {12, 8, 1}`, origin `{-6, -4, 0}`, **96 tile**.
+
+Porte:
+
+| Porta | Position | targetRoom | playerSpawnPosition |
+|---|---|---|---|
+| `Door_ToRoom5` | `{0, 4, 0}` | `Room_5` | `{0, -2.9}` |
+| `Door_ToBossRoom` | `{0, -4, 0}` | `Boss_Room` | `{0, 2.9}` |
+
+Nemici (1): `MiniBoss` da `MiniBoss.prefab` a `{0, -1, 0}`, nessun override oltre alla posizione.
+
+---
+
+### Boss_Room — stanza finale (`finalRoom`)
+
+Transform: Position `{0, 0, 0}`, Scale `{1, 1, 1}`.
+
+**Unica stanza con `RoomCameraSettings`**: `referenceResolution = {320, 180}`.
+Entrandoci, `RoomManager.ApplyCameraFor()` scrive 320×180 in `PixelPerfectCamera`;
+uscendo verso qualunque altra stanza si torna a 240×135.
+
+Muri (schema B, stanza 18×10):
+
+| Oggetto | Position | Scale | BoxCollider2D Size |
+|---|---|---|---|
+| `Wall_Top` | `{0, 5, 0}` | `{18, 0.5, 1}` | `{1, 1}` |
+| `Wall_Left` | `{-9, 0, 0}` | `{10, 0.5, 1}` | `{1, 1}` |
+| `Wall_Bottom` | `{0, -5, 0}` | `{18, 0.5, 1}` | `{1, 1}` |
+| `Wall_Right` | `{9, 0, 0}` | `{10, 0.5, 1}` | `{1, 1}` |
+
+Pavimento: `Grid (1)` a Position `{0, -0.0024, 0}` → `Floor`,
+Tilemap `m_Size {18, 10, 1}`, origin `{-9, -5, 0}`, **180 tile**.
+
+Porte:
+
+| Porta | Position | targetRoom | playerSpawnPosition |
+|---|---|---|---|
+| `Door_ToMiniBoss` | `{0, 5, 0}` | `MiniBoss_Room` | `{0, -2.9}` |
+
+Nemici (1): `Boss` da `Boss.prefab` a `{0, -2, 0}`, con override del colore dello
+`SpriteRenderer` → `m_Color {r: 0.9811321, g: 0.9811321, b: 0.9811321}`.
+
+> Il colore di base modificato conta: `EnemyBase.Awake()` salva `baseSpriteColor` dallo
+> `SpriteRenderer`, quindi il grigio chiaro è ciò a cui il boss torna in fase 1 e a fine
+> lampo di danno.
+
+### Riepilogo mappa
+
+```
+Room_1 ──(E)── Room_2 ──(N)── Room_3
+  │ (muro segreto, N)  ├─(E)── Room_4
+Room_Secret            └─(S)── Room_5 ──(S)── MiniBoss_Room ──(S)── Boss_Room
+```
+
+Totale nemici piazzati in scena: **14** (3+3+3+3+1+1 su Room_2..Boss_Room; Room_1 e
+Room_Secret sono vuote).
 
 ---
 
 ## 2. Prefab
 
-25 prefab in `Assets/Prefabs/`. Per ognuno: componenti e campi `[SerializeField]` serializzati. `{fileID: 0}` è marcato **None**.
+### Prefab dei nemici
 
-### Bomb.prefab
-GO `Bomb` (tag `Untagged`) — Transform, `BombController`, SpriteRenderer.
+#### `Walker.prefab` — tag `Enemy`
 
-| Campo | Valore |
-|---|---|
-| fuseTime | 2 |
-| explosionRadius | 1.5 |
-| explosionDamage | 3 |
-| explosionEffectPrefab | assegnato → `BombExplosion.prefab` |
+- **Transform**: Position `{-2, 2, 0}`, **Scale `{1, 1, 1}`**
+- **SpriteRenderer**: sprite `neo_zero_walker_96x72.png`, Color bianco, SortingOrder 0, DrawMode Simple, Size `{1, 1}`
+- **Rigidbody2D**: Dynamic, Mass 1, GravityScale 0, Constraints 4 (FreezeRotation)
+- **BoxCollider2D**: **Size `{1, 1}`**, Offset `{0, 0}`, non trigger
+- **EnemyController**: `maxHealth: 4` · `contactDamage: 1` · `hitFlashDuration: 0.15` · `deathEffectDuration: 0.2` · `moveSpeed: 2`
+- **EnemyVisuals**: `walkDown` / `walkUp` / `walkSide` = 4 sprite ciascuno da `neo_zero_walker_96x72.png` · `frameRate: 6` · `idleFrame: 0` · `moveThreshold: 0.01`
+- Riferimenti a None: nessuno
 
-### BombExplosion.prefab
-GO `BombExplosion` (tag `Untagged`) — Transform, `ExplosionEffect`, SpriteRenderer. `duration: 0.3`, `maxScale: 3`. SpriteRenderer colore `(1, 0.615, 0, 1)`.
+#### `Dasher.prefab` — tag `Enemy`
 
-### Boss.prefab
-4 GameObject: `Boss` (tag `Enemy` — Transform, SpriteRenderer, Rigidbody2D, BoxCollider2D, `BossController`), `HealthBar` (Canvas + CanvasScaler + GraphicRaycaster), `Background` e `Fill` (Image, figli di HealthBar).
+- **Transform**: Position `{0, 0.0024, 0}`, **Scale `{1, 1, 1}`**
+- **SpriteRenderer**: sprite `neo_zero_dasher_128x72_1.png`, Color bianco, SortingOrder 0
+- **Rigidbody2D**: Dynamic, Mass 1, GravityScale 0, Constraints 4
+- **BoxCollider2D**: **Size `{1.6, 0.9}`**, Offset `{0, 0}`, non trigger
+- **DasherController**: `maxHealth: 4` · `contactDamage: 2` · `hitFlashDuration: 0.08` · `deathEffectDuration: 0.2` · `idleDuration: 1.5` · `telegraphDuration: 0.6` · `dashDuration: 0.4` · `dashSpeed: 12` · `idleMoveSpeed: 1` · `telegraphColor {r: 0.0883, g: 0, b: 0.5142, a: 1}` (blu scuro)
+- **EnemyVisuals**: 4+4+4 sprite da `neo_zero_dasher_128x72_1.png` · `frameRate: 6` · `idleFrame: 0` · `moveThreshold: 0.01`
+- Riferimenti a None: nessuno
 
-Rigidbody2D: `m_GravityScale: 0`, `m_Mass: 10`, `m_BodyType: 0`, `m_Constraints: 4`. BoxCollider2D `(1,1)`, non trigger.
+#### `Turret.prefab` — tag `Enemy`
 
-Dopo il refactoring i campi sono dichiarati in due classi: **`BossBase`** (movimento, telegrafo, proiettili, carica, rabbia, barra vita, feedback morte) e **`BossController`** (solo le azioni specifiche e i colori di fase). La serializzazione resta piatta, quindi i valori nel prefab non sono cambiati.
+- **Transform**: Position `{-3, -3, 0}`, **Scale `{1, 1, 1}`**
+- **SpriteRenderer**: sprite `neo_zero_turret_256x32.png`, Color bianco, SortingOrder 0
+- **Rigidbody2D**: **Kinematic** (`m_BodyType: 1`), Mass 1, **GravityScale 1**, Constraints 0
+- **BoxCollider2D**: **Size `{1, 1}`**, Offset `{0, 0}`, non trigger
+- **TurretController**: `maxHealth: 4` · `contactDamage: 1` · `hitFlashDuration: 0.08` · `deathEffectDuration: 0.2` · `projectilePrefab` → `EnemyProjectile.prefab` · `projectileSpeed: 6` · `fireInterval: 2` · `directionSprites` = 8 sprite da `neo_zero_turret_256x32.png`
+- **Non ha `EnemyVisuals`**: l'orientamento è gestito da `TurretController.UpdateFacing()` tramite `directionSprites`
+- Riferimenti a None: nessuno
 
-| Campo | Valore | Dichiarato in |
-|---|---|---|
-| maxHealth | 40 | EnemyBase |
-| contactDamage | 2 | EnemyBase |
-| hitFlashDuration | 0.08 | EnemyBase |
-| deathEffectDuration | 0.2 | EnemyBase |
-| moveSpeed | 1.2 | BossBase |
-| moveDuration | 2 | BossBase |
-| telegraphDuration | 0.5 | BossBase |
-| telegraphColor | `(1,1,1,1)` | BossBase |
-| projectilePrefab | assegnato → `EnemyProjectile.prefab` | BossBase |
-| projectileSpeed | 5 | BossBase |
-| chargeSpeed | 9 | BossBase |
-| chargeDuration | 0.5 | BossBase |
-| enrageHealthRatio | 0.15 | BossBase |
-| enrageSpeedMultiplier | 1.3 | BossBase |
-| enrageColor | `(1,0,0,1)` | BossBase |
-| healthBarFill | assegnato → `Fill` (fileID interno 7393254670952261867) | BossBase |
-| healthBarRoot | assegnato → `Background` (fileID interno 7864239742568175789) | BossBase |
-| deathShakeDuration | 0.3 | BossBase |
-| deathShakeMagnitude | 0.15 | BossBase |
-| radialCount | 8 | BossController |
-| volleySpread | 15 | BossController |
-| spiralWaveCount | 3 | BossController |
-| spiralBulletsPerWave | 5 | BossController |
-| spiralWaveInterval | 0.3 | BossController |
-| spiralRotationStep | 20 | BossController |
-| spiralProjectileSpeed | 3.5 | BossController |
-| maxChargeChain | 2 | BossController |
-| chargeChainChance | 0.5 | BossController |
-| minionPrefab | assegnato → `Dasher.prefab` | BossController |
-| minionCount | 2 | BossController |
-| **minionSpawnRadius** | **non serializzato** → default `1.2` | BossController |
-| enragePulseSpeed | 6 | BossController |
-| phase2Color | `(1, 0.6, 0.2, 1)` | BossController |
-| phase3Color | `(1, 0.2, 0.2, 1)` | BossController |
+#### `Shielded.prefab` — tag `Enemy`
 
-Su `Fill`: `m_Material` **None**, `m_Sprite` assegnato (sprite UI di default), `m_Type: 3` (Filled). Su `Background`: `m_Material` **None**, `m_Sprite` **None**.
+- **Transform** (radice): Position `{3, 3, 0}`, **Scale `{1, 1, 1}`**
+- **SpriteRenderer**: sprite `neo_zero_shielded_96x72.png`, Color `{0.9764, 0.9764, 0.9764, 1}`, SortingOrder 0
+- **Rigidbody2D**: Dynamic, Mass 1, GravityScale 0, Constraints 4
+- **BoxCollider2D**: **Size `{1, 1.1875}`**, Offset `{0, 0}`, non trigger
+- **ShieldedController**: `maxHealth: 5` · `contactDamage: 1` · `hitFlashDuration: 0.08` · `deathEffectDuration: 0.2` · `moveSpeed: 1.3` · `shieldVisual` → Transform `ShieldPivot` · `shieldArc: 0.3` · `shieldRotationSpeed: 80`
+- **EnemyVisuals**: 4+4+4 sprite da `neo_zero_shielded_96x72.png` · `frameRate: 6` · `idleFrame: 0` · `moveThreshold: 0.01`
+  (`walkDown[0]` e `walkDown[2]` puntano allo stesso sprite)
+- Figli:
+  - `ShieldPivot` — Position `{0, 0, 0}`, **Scale `{1, 1, 1}`**, nessun componente oltre al Transform
+    - `Shield` — Position `{0.6, 0, 0}`, **Scale `{0.2, 1, 1}`**, SpriteRenderer con sprite `nemico_shield_24_1.png`, nessun collider
+- Riferimenti a None: nessuno
 
-### Dasher.prefab
-GO `Dasher` (tag `Enemy`) — Transform, SpriteRenderer, Rigidbody2D (`m_Mass: 1`, `m_Constraints: 4`), `DasherController`, BoxCollider2D `(1,1)`.
+#### `Splitter.prefab` — tag `Enemy`
 
-| Campo | Valore |
-|---|---|
-| maxHealth | 4 |
-| contactDamage | 2 |
-| idleDuration | 1.5 |
-| telegraphDuration | 0.6 |
-| dashDuration | 0.4 |
-| dashSpeed | 12 |
-| idleMoveSpeed | 1 |
-| telegraphColor | `(0.088, 0, 0.514, 1)` |
+- **Transform**: Position `{2, 2, 0}`, **Scale `{1.5, 1.5, 1}`**
+- **SpriteRenderer**: sprite quadrato built-in (GUID `311925a0…`, non in `Assets/`), Color `{0, 0.4227, 0.9529, 1}` (blu), SortingOrder 0
+- **Rigidbody2D**: Dynamic, Mass 1, GravityScale 0, Constraints 4
+- **BoxCollider2D**: **Size `{1, 1}`**, Offset `{0, 0}`, non trigger
+- **SplitterController**: `maxHealth: 8` · `contactDamage: 1` · `hitFlashDuration: 0.08` · `deathEffectDuration: 0.2` · `moveSpeed: 1.2` · `splitPrefab` → `Splitterling 1.prefab` · `splitCount: 2` · `splitSpread: 0.6`
+- **EnemyVisuals**: `walkDown`, `walkUp`, `walkSide` **tutti array vuoti** · `frameRate: 6` · `idleFrame: 0` · `moveThreshold: 0.01`
+- Riferimenti a None: nessuno (ma vedi array vuoti in §6)
 
-Nota: `hitFlashDuration` / `deathEffectDuration` (da `EnemyBase`) non risultano serializzati in questo file.
+#### `Splitterling 1.prefab` — tag `Enemy`
 
-### EnemyProjectile.prefab
-GO `EnemyProjectile` (tag `EnemyProjectile`) — Transform, SpriteRenderer, `EnemyProjectileController`, Rigidbody2D, CircleCollider2D (trigger, radius 0.5). `lifetime: 4`.
+- **Transform**: Position `{2, 2, 0}`, **Scale `{0.5, 0.5, 1}`**
+- **SpriteRenderer**: sprite quadrato built-in (GUID `311925a0…`), Color `{0.4009, 0.8319, 1, 1}` (azzurro), SortingOrder 0
+- **Rigidbody2D**: Dynamic, Mass 1, GravityScale 0, Constraints 4
+- **BoxCollider2D**: **Size `{1, 1}`**, Offset `{0, 0}`, non trigger
+- **SplitterController**: `maxHealth: 1` · `contactDamage: 1` · `hitFlashDuration: 0.08` · `deathEffectDuration: 0.2` · `moveSpeed: 3.5` · **`splitPrefab` → None** · `splitCount: 2` · `splitSpread: 0.6`
+- **EnemyVisuals**: array direzionali **tutti vuoti** · `frameRate: 6` · `idleFrame: 0` · `moveThreshold: 0.01`
+- Riferimenti a None: **`splitPrefab`** (intenzionale: chiude la catena di divisione — `SpawnEnemiesAroundSelf` esce subito se il prefab è null)
 
-### MiniBoss.prefab
-4 GameObject: `MiniBoss` (tag `Enemy` — Transform, SpriteRenderer, Rigidbody2D, BoxCollider2D, **`MinibossController`**), `HealthBar` (Canvas + CanvasScaler + GraphicRaycaster), `Fill` e `Background` (Image).
+#### `Teleporter.prefab` — tag `Enemy`
 
-> Lo script è ora `Assets/Scripts/MinibossController.cs` (prima il file si chiamava `MiniBossController.cs` con la classe `MinibossController`: nome file e nome classe non coincidevano). Il GUID del `.meta` è invariato, quindi il riferimento nel prefab è rimasto valido.
+- **Transform**: Position `{-2, 2, 0}`, **Scale `{1, 1, 1}`**
+- **SpriteRenderer**: sprite `nemico_teleporter_24_1.png`, Color bianco, SortingOrder 0
+- **Rigidbody2D**: **Kinematic** (`m_BodyType: 1`), Mass 1, GravityScale 0, Constraints 4
+- **BoxCollider2D**: **Size `{1, 1}`**, Offset `{0, 0}`, non trigger
+- **TeleporterController**: `maxHealth: 2` · `contactDamage: 1` · `hitFlashDuration: 0.08` · `deathEffectDuration: 0.2` · `idleDuration: 1.8` · `vanishDuration: 0.4` · `minDistanceFromPlayer: 2.5` · `maxDistanceFromPlayer: 4` · `roomHalfWidth: 3` · `roomHalfHeight: 3` · `projectilePrefab` → `EnemyProjectile.prefab` · `projectileSpeed: 7`
+- **Non ha `EnemyVisuals`**
+- Riferimenti a None: nessuno
 
-Rigidbody2D: `m_Mass: 1`, `m_Constraints: 4`. BoxCollider2D `(1,1)`.
+#### `MiniBoss.prefab` — tag `Enemy`
 
-| Campo | Valore | Dichiarato in |
-|---|---|---|
-| maxHealth | 15 | EnemyBase |
-| contactDamage | 2 | EnemyBase |
-| hitFlashDuration | 0.08 | EnemyBase |
-| deathEffectDuration | 0.2 | EnemyBase |
-| moveSpeed | 1.5 | BossBase |
-| moveDuration | 1.5 | BossBase |
-| telegraphDuration | 0.4 | BossBase |
-| telegraphColor | `(1,1,1,1)` | BossBase |
-| projectilePrefab | assegnato → `EnemyProjectile.prefab` | BossBase |
-| projectileSpeed | 5 | BossBase |
-| chargeSpeed | 7 | BossBase |
-| chargeDuration | 0.4 | BossBase |
-| enrageHealthRatio | 0.4 | BossBase |
-| enrageSpeedMultiplier | 1.4 | BossBase |
-| enrageColor | `(1, 0.3, 0.1, 1)` | BossBase |
-| healthBarFill | assegnato → `Fill` (fileID interno 3725787053202305065) | BossBase |
-| healthBarRoot | assegnato → `Background` (fileID interno 3050016494842750956) | BossBase |
-| deathShakeDuration | 0.25 | BossBase |
-| deathShakeMagnitude | 0.12 | BossBase |
-| projectilesPerBurst | 5 | MinibossController |
-| aimedBurstCount | 3 | MinibossController |
-| aimedSpread | 12 | MinibossController |
+- **Transform** (radice): Position `{0, -2, 0}`, **Scale `{1, 1, 1}`**
+- **SpriteRenderer**: sprite da `neo_zero_miniboss_128x72.png` (stesso atlas dei frame di `EnemyVisuals`), Color bianco, SortingOrder 0
+- **Rigidbody2D**: Dynamic, Mass 1, GravityScale 0, Constraints 4
+- **BoxCollider2D**: **Size `{1.6, 1.3}`**, Offset `{0, 0}`, non trigger
+- **MinibossController** (da `EnemyBase` → `BossBase`):
+  - da `EnemyBase`: `maxHealth: 15` · `contactDamage: 2` · `hitFlashDuration: 0.08` · `deathEffectDuration: 0.2`
+  - da `BossBase`: `moveSpeed: 1.5` · `moveDuration: 1.5` · `telegraphDuration: 0.4` · `telegraphColor` bianco · `projectilePrefab` → `EnemyProjectile.prefab` · `projectileSpeed: 5` · `chargeSpeed: 7` · `chargeDuration: 0.4` · `enrageHealthRatio: 0.4` · `enrageSpeedMultiplier: 1.4` · `enrageColor {1, 0.3, 0.1, 1}` · `healthBarFill` → Image su `Fill` · `healthBarRoot` → GameObject **`Background`** · `deathShakeDuration: 0.25` · `deathShakeMagnitude: 0.12`
+  - proprie: `projectilesPerBurst: 5` · `aimedBurstCount: 3` · `aimedSpread: 12`
+- **EnemyVisuals**: 4+4+4 sprite da `neo_zero_miniboss_128x72.png` · `frameRate: 6` · `idleFrame: 0` · `moveThreshold: 0.01`
+- Figli (barra della vita in World Space):
+  - `HealthBar` — RectTransform, **Scale `{0.0125, 0.002, 0.01}`**, anchoredPosition `{0, 0.8}`, sizeDelta `{250, 1}`, anchorMin/Max `{0, 0}`, pivot `{0.5, 0.5}`
+    - `Canvas` RenderMode 2 (World Space), SortingOrder 0
+    - `CanvasScaler` UiScaleMode 0, ReferenceResolution `{800, 600}`, ReferencePixelsPerUnit 100
+    - `GraphicRaycaster`
+    - `Background` — RectTransform Scale `{1, 1, 1}`, sizeDelta `{0, 88}`, anchor stretch; Image Color `{0.283, 0.2817, 0.2817, 1}`, **Sprite None**, Type Simple
+    - `Fill` — RectTransform Scale `{1, 1, 1}`, sizeDelta `{0, 88}`, anchor stretch; Image Color `{1, 0.0236, 0.0236, 1}` (rosso), Type **Filled** (`m_Type: 3`), FillAmount 1, FillMethod 0 (Horizontal), sprite UI built-in
+- Riferimenti a None: `Background/Image.m_Sprite`
+- **Nota**: `healthBarRoot` punta al figlio `Background`, non alla radice `HealthBar`.
+  `BossBase.Start()` fa `healthBarRoot.SetActive(true)` e `Die()` lo disattiva: alla morte
+  sparisce lo sfondo grigio, mentre `Fill` (il riempimento rosso) resta attivo.
 
-### Pickup (11 prefab)
-Tutti con Transform, SpriteRenderer, CircleCollider2D (trigger, radius 0.5), `PickupController`. Cambia solo `pickupType`; gli altri campi restano ai valori di default del prefab da cui sono stati duplicati.
+#### `Boss.prefab` — tag `Enemy`
 
-| Prefab | pickupType |
-|---|---|
-| Pickup_Heal | 0 (Heal) |
-| Pickup_Speed | 1 (SpeedBoost) |
-| Pickup_Bomb | 2 (Bomb) |
-| Pickup_MaxHealthUp | 3 (MaxHealthUp) |
-| Pickup_DamageUp | 4 (DamageUp) |
-| Pickup_SpeedUp | 5 (SpeedUp) |
-| Pickup_FireRateUp | 6 (FireRateUp) |
-| HealthRegen | 7 (HealthRegenUp) |
-| PickUp_ArmorUp | 8 (ArmorUp) |
-| MeleeArcUp | 9 (MeleeArcUp) |
-| ProjectileBounceUp | 10 (ProjectileBounceUp) |
+- **Transform** (radice): Position `{0, 0.0024, 0}`, **Scale `{2.5, 2.5, 1}`**
+- **SpriteRenderer**: sprite da `neo_zero_boss_128x96.png`, Color bianco, SortingOrder 0
+- **Rigidbody2D**: Dynamic, **Mass 10**, GravityScale 0, Constraints 4
+- **BoxCollider2D**: **Size `{1, 1}`**, Offset `{0, 0}`, non trigger
+  (la scala 2.5 del Transform lo porta a 2.5×2.5 unità effettive)
+- **BossController** (da `EnemyBase` → `BossBase`):
+  - da `EnemyBase`: `maxHealth: 40` · `contactDamage: 2` · `hitFlashDuration: 0.08` · `deathEffectDuration: 0.2`
+  - da `BossBase`: `moveSpeed: 1.2` · `moveDuration: 2` · `telegraphDuration: 0.5` · `telegraphColor` bianco · `projectilePrefab` → `EnemyProjectile.prefab` · `projectileSpeed: 5` · `chargeSpeed: 9` · `chargeDuration: 0.5` · `enrageHealthRatio: 0.15` · `enrageSpeedMultiplier: 1.3` · `enrageColor {1, 0, 0, 1}` · `healthBarFill` → Image su `Fill` · `healthBarRoot` → GameObject **`Background`** · `deathShakeDuration: 0.3` · `deathShakeMagnitude: 0.15`
+  - proprie: `radialCount: 8` · `volleySpread: 15` · `spiralWaveCount: 3` · `spiralBulletsPerWave: 5` · `spiralWaveInterval: 0.3` · `spiralRotationStep: 20` · `spiralProjectileSpeed: 3.5` · `maxChargeChain: 2` · `chargeChainChance: 0.5` · `minionPrefab` → **`Dasher.prefab`** · `minionCount: 2` · `minionSpawnRadius: 1.2` · `enragePulseSpeed: 6` · `phase2Color {1, 0.6, 0.2, 1}` · `phase3Color {1, 0.2, 0.2, 1}`
+- **EnemyVisuals**: 4+4+4 sprite da `neo_zero_boss_128x96.png` · `frameRate: 6` · `idleFrame: 0` · `moveThreshold: 0.01`
+- Figli: stessa struttura del MiniBoss —
+  `HealthBar` (RectTransform **Scale `{0.0125, 0.002, 0.01}`**, anchoredPosition `{0, 0.8}`, sizeDelta `{250, 1}`; Canvas World Space + CanvasScaler + GraphicRaycaster)
+  → `Background` (Scale `{1, 1, 1}`, Image grigia, **Sprite None**) e `Fill` (Scale `{1, 1, 1}`, Image rossa Filled)
+- Riferimenti a None: `Background/Image.m_Sprite`
+- Stessa nota su `healthBarRoot` del MiniBoss
 
-Valori comuni: `healAmount 2`, `speedMultiplier 1.5`, `boostDuration 5`, `bombAmount 1`, `maxHealthIncrease 2`, `damageIncrease 1`, `speedIncrease 1`, `fireRateIncrease 0.05`, `healthRegenChanceIncrease 0.15`, `contactDamageReductionIncrease 1`, `meleeArcIncrease 0.15`, `projectileBounceIncrease 1`. I prefab più vecchi (`Pickup_Heal`, `Pickup_Speed`, `Pickup_Bomb`, `Pickup_DamageUp`, `Pickup_FireRateUp`, `Pickup_MaxHealthUp`, `Pickup_SpeedUp`) hanno solo il sottoinsieme di campi esistente al momento del loro salvataggio.
+### Prefab dei proiettili e delle bombe
 
-### Projectile.prefab
-GO `Projectile` (tag `PlayerProjectile`) — Transform, SpriteRenderer, Rigidbody2D, CircleCollider2D (trigger, radius 0.5), `ProjectileController`. `lifetime: 3`.
+#### `Projectile.prefab` — tag `PlayerProjectile`
 
-### Shielded.prefab
-3 GameObject: `Shielded` (tag `Enemy` — Transform, SpriteRenderer, `ShieldedController`, Rigidbody2D, BoxCollider2D), `Shield` e `ShieldPivot` (figli).
+- **Transform**: Position `{0, 0.0024, 0}`, **Scale `{1, 1, 1}`**
+- **SpriteRenderer**: sprite `projAI_player_16.png`, Color bianco, SortingOrder 0
+- **Rigidbody2D**: Dynamic, Mass 1, GravityScale 0, **Constraints 0** (rotazione libera)
+- **CircleCollider2D**: **Radius `0.25`**, Offset `{0, 0}`, **trigger**
+- **ProjectileController**: `lifetime: 3` (unico campo serializzato; `damage`, `piercing`, `bouncesLeft` sono impostati a runtime da `PlayerController.SpawnProjectile`)
+- Riferimenti a None: nessuno
 
-| Campo | Valore |
-|---|---|
-| maxHealth | 5 |
-| contactDamage | 1 |
-| moveSpeed | 1.3 |
-| shieldVisual | assegnato → `Shield` (fileID interno 2031629430023782870) |
-| shieldArc | 0.3 |
-| shieldRotationSpeed | 80 |
+#### `EnemyProjectile.prefab` — tag `EnemyProjectile`
 
-### Splitter.prefab
-GO `Splitter` (tag `Enemy`) — Transform, SpriteRenderer, Rigidbody2D, BoxCollider2D, `SplitterController`.
+- **Transform**: Position `{0, 0.0024, 0}`, **Scale `{1, 1, 1}`**
+- **SpriteRenderer**: sprite `projAI_nemico_16.png`, Color bianco, SortingOrder 0
+- **Rigidbody2D**: Dynamic, Mass 1, GravityScale 0, **Constraints 0**
+- **CircleCollider2D**: **Radius `0.25`**, Offset `{0, 0}`, **trigger**
+- **EnemyProjectileController**: `lifetime: 4` · `damage: 1`
+- Riferimenti a None: nessuno
 
-| Campo | Valore |
-|---|---|
-| maxHealth | 8 |
-| contactDamage | 1 |
-| moveSpeed | 1.2 |
-| splitPrefab | assegnato → `Splitterling 1.prefab` |
-| splitCount | 2 |
-| splitSpread | 0.6 |
+#### `Bomb.prefab`
 
-### "Splitterling 1.prefab"
-GO `Splitterling 1` (tag `Enemy`) — stessi componenti. `maxHealth 1`, `contactDamage 1`, `moveSpeed 3.5`, `splitPrefab` **None** (non si divide oltre), `splitCount 2`, `splitSpread 0.6`.
+- **Transform**: Position `{0, 0.0024, 0}`, **Scale `{0.6, 0.6, 1}`**
+- **SpriteRenderer**: sprite built-in (GUID `a86470a3…`, non in `Assets/`), Color **nero** `{0, 0, 0, 1}`, SortingOrder 0
+- **BombController**: `fuseTime: 2` · `explosionRadius: 1.5` · `explosionDamage: 3` · `explosionEffectPrefab` → `BombExplosion.prefab`
+- **Nessun collider e nessun Rigidbody2D**: il danno è tutto via `Physics2D.OverlapCircleAll`
+- Riferimenti a None: nessuno
 
-### Teleporter.prefab
-GO `Teleporter` (tag `Enemy`) — Transform, SpriteRenderer, Rigidbody2D (`m_BodyType: 1` Kinematic), **`TeleporterController`**, BoxCollider2D.
+#### `BombExplosion.prefab`
 
-> Lo script è ora `Assets/Scripts/TeleporterController.cs` (prima il file si chiamava `Teleporter Controller.cs`, con uno spazio, mentre la classe era `TeleporterController`). Il GUID del `.meta` è invariato.
+- **Transform**: Position `{0, 0.0024, 0}`, **Scale `{0.5, 0.5, 1}`**
+- **SpriteRenderer**: sprite `esplAI_estesa.png`, Color bianco, SortingOrder 0
+- **ExplosionEffect**: `duration: 0.3` · `maxScale: 3`
+- **Nessun collider**: è solo visivo (`ExplosionEffect.Update` sovrascrive comunque `localScale` da 0.5 a 3)
+- Riferimenti a None: nessuno
 
-| Campo | Valore |
-|---|---|
-| idleDuration | 1.8 |
-| vanishDuration | 0.4 |
-| minDistanceFromPlayer | 2.5 |
-| maxDistanceFromPlayer | 4 |
-| projectilePrefab | assegnato → `EnemyProjectile.prefab` |
-| projectileSpeed | 7 |
-| maxHealth | 2 |
+### Prefab dei pickup
 
-Non serializzati (default dello script): `roomHalfWidth 3`, `roomHalfHeight 3`, `contactDamage 1`, `hitFlashDuration 0.08`, `deathEffectDuration 0.2`.
+Tutti hanno la stessa struttura: `Transform` + `SpriteRenderer` (sprite da
+`neo_zero_pickup_AI_64x48.png`, Color bianco, SortingOrder 0) + `CircleCollider2D`
+**trigger** + `PickupController`. Nessuno ha Rigidbody2D. Nessun riferimento a None.
 
-### Turret.prefab
-GO `Turret` (tag `Enemy`) — Transform, SpriteRenderer, Rigidbody2D (Kinematic), BoxCollider2D, `TurretController`. `maxHealth 4`, `contactDamage 1`, `projectilePrefab` → `EnemyProjectile.prefab`, `projectileSpeed 6`, `fireInterval 2`.
+I campi numerici di `PickupController` sono **identici in tutti gli 11 prefab** — solo
+`pickupType` cambia:
 
-### Walker.prefab
-GO `Walker` (tag `Enemy`) — Transform, SpriteRenderer, `EnemyController`, Rigidbody2D, BoxCollider2D. `maxHealth 4`, `contactDamage 1`, `moveSpeed 2`.
+`healAmount: 2` · `speedMultiplier: 1.5` · `boostDuration: 5` · `bombAmount: 1` ·
+`maxHealthIncrease: 2` · `damageIncrease: 1` · `speedIncrease: 1` ·
+`fireRateIncrease: 0.05` · `healthRegenChanceIncrease: 0.15` ·
+`contactDamageReductionIncrease: 1` · `meleeArcIncrease: 0.15` ·
+`projectileBounceIncrease: 1`
 
-### Prefab non più presenti / non referenziati
+| Prefab | `pickupType` | Enum | Transform Scale | Collider Radius |
+|---|---|---|---|---|
+| `Pickup_Heal` | 0 | `Heal` | `{0.4, 0.4, 1}` | `0.5` |
+| `Pickup_Speed` | 1 | `SpeedBoost` | `{0.3, 0.3, 1}` | `0.49999997` |
+| `Pickup_Bomb` | 2 | `Bomb` | `{0.4, 0.4, 1}` | `0.5` |
+| `Pickup_MaxHealthUp` | 3 | `MaxHealthUp` | `{0.6, 0.6, 1}` | `0.49999997` |
+| `Pickup_DamageUp` | 4 | `DamageUp` | `{0.6, 0.6, 1}` | `0.49999997` |
+| `Pickup_SpeedUp` | 5 | `SpeedUp` | `{0.6, 0.6, 1}` | `0.49999997` |
+| `Pickup_FireRateUp` | 6 | `FireRateUp` | `{0.6, 0.6, 1}` | `0.49999997` |
+| `HealthRegen` | 7 | `HealthRegenUp` | `{0.6, 0.6, 1}` | `0.49999997` |
+| `PickUp_ArmorUp` | 8 | `ArmorUp` | `{0.6, 0.6, 1}` | `0.49999997` |
+| `MeleeArcUp` | 9 | `MeleeArcUp` | `{0.6, 0.6, 1}` | `0.49999997` |
+| `ProjectileBounceUp` | 10 | `ProjectileBounceUp` | `{0.6, 0.6, 1}` | `0.49999997` |
 
-- **`Player.prefab` non esiste più** nel progetto (cancellato insieme al suo `.meta`). Il Player vive solo come GameObject nella scena, descritto nella sezione 4.
-- **`old.prefab`** è presente ma non tracciato da git e referenzia uno script `NewMonoBehaviourScript` che non esiste in `Assets/Scripts/`: è un prefab con riferimento rotto, non usato da nulla.
+Tutti hanno Position `{0, 0.0024, 0}` e ognuno usa uno sprite ritagliato diverso dallo
+stesso atlas `neo_zero_pickup_AI_64x48.png`.
+
+I primi tre (`Heal`, `Speed`, `Bomb`) sono quelli in `RoomManager.pickupPrefabs`
+(drop a fine stanza); gli altri otto sono in `permanentUpgradePrefabs`
+(ricompensa da boss e da stanza segreta).
 
 ---
 
 ## 3. Tag e Layer
 
-### Tag (da `ProjectSettings/TagManager.asset`)
+### Tag definiti in `ProjectSettings/TagManager.asset`
 
-Tag custom definiti: `EnemyProjectile`, `Enemy`, `PlayerProjectile`, `Door`, `Wall`.
-Tag built-in di Unity usati: `Player`, `MainCamera`, `Untagged`.
+Cinque tag personalizzati, oltre a quelli built-in di Unity:
 
-| Tag | Usato negli script (`CompareTag` / `FindGameObjectWithTag`) | Chi lo porta |
+| Tag | Usato da (script) | Oggetti che lo portano |
 |---|---|---|
-| `Enemy` | `BombController.cs:49`, `ProjectileController.cs:44`, `PlayerController.cs:277`, `RoomManager.cs:188` | i 9 prefab nemici; 14 istanze in scena |
-| `Wall` | `ProjectileController.cs:62`, `EnemyProjectileController.cs:26` | tutti i `Wall_*` (32 in scena) |
-| `Door` | `RoomManager.cs:167` | tutti i `Door_To*` (13 in scena) |
-| `Player` | `EnemyBase.cs:40`, `EnemyBase.cs:145`, `RoomManager.cs:60`, `DoorTrigger.cs:11`, `SecretWall.cs:42`, `PickupController.cs:32`, `EnemyProjectileController.cs:15`, `BombController.cs:39` | GO `Player` in scena |
-| `EnemyProjectile` | `PlayerController.cs:267` (parata corpo a corpo) | `EnemyProjectile.prefab` |
-| `PlayerProjectile` | nessun uso negli script: assegnato al prefab ma mai riletto | `Projectile.prefab` |
-| `MainCamera` | non referenziato (nessun `Camera.main` negli script) | GO `Main Camera` |
+| `EnemyProjectile` | `PlayerController.cs:267` (`MeleeAttack` — il corpo a corpo li distrugge) | `EnemyProjectile.prefab` |
+| `Enemy` | `BombController.cs:49`, `ProjectileController.cs:44`, `PlayerController.cs:277`, `RoomManager.cs:209` (`CountEnemies`) | prefab `Walker`, `Dasher`, `Turret`, `Shielded`, `Splitter`, `Splitterling 1`, `Teleporter`, `MiniBoss`, `Boss` → **14 istanze in scena** (Room_2..Boss_Room) |
+| `PlayerProjectile` | **nessuno script lo legge** | `Projectile.prefab` |
+| `Door` | `RoomManager.cs:188` (`SetDoorsActive`) | **13 oggetti in scena** (elenco sotto) |
+| `Wall` | `EnemyProjectileController.cs:26`, `ProjectileController.cs:62` (`BounceOffWall`) | **32 oggetti in scena** (4 muri × 8 stanze) |
 
-La ricerca di `Enemy` e `Door` fatta da `RoomManager` è **ricorsiva** su tutta la gerarchia della stanza (prima si fermava ai figli diretti).
+Tag built-in usati:
+
+| Tag | Usato da (script) | Oggetti che lo portano |
+|---|---|---|
+| `Player` | `EnemyBase.cs:40` (`FindGameObjectWithTag`) e `:145`, `BombController.cs:39`, `EnemyProjectileController.cs:15`, `PickupController.cs:32`, `DoorTrigger.cs:11`, `SecretWall.cs:53`, `RoomManager.cs:65` | 1 oggetto: `Player` |
+| `MainCamera` | nessuno script (usato da Unity per `Camera.main`) | 1 oggetto: `Main Camera` |
+| `Untagged` | — | 50 oggetti (manager, Canvas, UI, Grid, Floor, le stanze stesse, `MeleeVisual`, `WeaponPivot`) |
+
+Oggetti con tag `Door` (13):
+
+```
+Room_1/Door_ToRoom2            Room_2/Door_ToRoom1   Room_2/Door_ToRoom3
+Room_2/Door_ToRoom4            Room_2/Door_ToRoom5   Room_3/Door_ToRoom2
+Room_4/Door_ToRoom2            Room_5/Door_ToRoom2   Room_5/Door_ToMiniBoss
+Room_Secret/Door_ToRoom1       MiniBoss_Room/Door_ToRoom5
+MiniBoss_Room/Door_ToBossRoom  Boss_Room/Door_ToMiniBoss
+```
+
+Oggetti con tag `Wall` (32): `Wall_Top`, `Wall_Left`, `Wall_Bottom`, `Wall_Right` in
+ognuna delle 8 stanze — con l'eccezione di `Room_1`, dove al posto di `Wall_Top` c'è
+`Wall_Secret` (che ha comunque tag `Wall`).
+
+> `Room_1/Wall_Secret` ha tag `Wall`: dopo `Reveal()` il collider resta solido e il
+> passaggio avviene per collisione, quindi il tag serve anche a far rimbalzare/assorbire
+> i proiettili contro di esso.
 
 ### Layer
 
-Definiti: 0 Default, 1 TransparentFX, 2 Ignore Raycast, 4 Water, 5 UI; il resto vuoto. Nessun uso di `LayerMask` o `gameObject.layer` negli script. In scena gli oggetti sotto `Canvas` stanno su layer 5 (UI), tutto il resto su layer 0.
+`TagManager.asset` non definisce **nessun layer personalizzato**: restano solo i built-in
+(`Default`, `TransparentFX`, `Ignore Raycast`, `Water`, `UI`), con gli slot 3 e 6–31 vuoti.
+
+Layer effettivamente usati in scena:
+
+| Layer | Oggetti |
+|---|---|
+| 0 — `Default` | tutto il gameplay: `Player`, nemici, muri, porte, pavimenti, manager, `Main Camera`, `Global Light 2D` |
+| 5 — `UI` | `Canvas` e tutti i suoi discendenti (testi, pannelli, bottoni) |
+
+Sorting Layers: solo `Default` (uniqueID 0). La profondità è gestita interamente con
+`m_SortingOrder`: pavimento `-10`, `Room_1/Wall_Left` `-1`, muri e nemici `0`,
+`Player` e `WeaponPivot` `10`.
 
 ---
 
 ## 4. Player e Canvas
 
-### GameObject `Player` (fileID 539440560, tag `Player`)
+### GameObject `Player` — tag `Player`, layer 0
 
-Componenti: Transform, SpriteRenderer, Rigidbody2D (`m_Mass: 1`, `m_Constraints: 4`), BoxCollider2D `(1,1)`, `PlayerController` (MonoBehaviour `539440565`), `PlayerVisuals` (MonoBehaviour `539440566`).
-Figli: `MeleeVisual` (Transform + SpriteRenderer) e **`WeaponPivot`** (Transform + SpriteRenderer).
+**Transform**: Position `{0, 0.0024, 0}`, **Scale `{1, 1, 1}`**, rotazione identità.
 
-**`PlayerController`** — campi serializzati:
+**SpriteRenderer**: sprite da `neo_zero_char_01.png`, Color bianco,
+**SortingOrder 10**, DrawMode Simple, Size `{1, 1}`.
+
+**Rigidbody2D**: Dynamic, Mass 1, GravityScale 0, Constraints 4 (FreezeRotation),
+Simulated, CollisionDetection Discrete, Interpolate None.
+
+**BoxCollider2D**: **Size `{0.875, 1.4375}`**, **Offset `{0, 0.1875}`**, non trigger, EdgeRadius 0.
+
+**PlayerController** — tutti i 34 campi serializzati:
+
+| Gruppo | Campo | Valore |
+|---|---|---|
+| Movimento | `moveSpeed` | `5` |
+| Sparo | `projectilePrefab` | → `Projectile.prefab` |
+| | `projectileSpeed` | `10` |
+| | `fireCooldown` | `0.3` |
+| | `projectileDamage` | `1` |
+| | `firePointDistance` | `0.5` |
+| Armi | `spreadAngle` | `20` (default nel codice: 25) |
+| | `spreadCooldownMult` | `1.6` (default nel codice: 2.4) |
+| | `pierceCooldownMult` | `1.3` |
+| | `spreadLifetime` | `0.35` |
+| Corpo a corpo | `meleeRange` | `1.1` |
+| | `meleeArc` | `0.3` |
+| | `meleeDamageMult` | `2` |
+| | `meleeCooldownMult` | `1.4` |
+| Bombe | `bombPrefab` | → `Bomb.prefab` |
+| | `maxBombs` | `3` |
+| | `bombCooldown` | `1` |
+| Vita | `maxHealth` | `6` |
+| | `invulnerabilityDuration` | `0.8` (default nel codice: 0.5) |
+| | `healthRegenInterval` | `5` |
+| | `healthRegenChance` | `0` |
+| | `contactDamageReduction` | `0` |
+| Potenziamenti sparo | `projectileBounces` | `0` |
+| Feedback danno | `hitFlashDuration` | `0.1` |
+| | `hitShakeDuration` | `0.15` |
+| | `hitShakeMagnitude` | `0.1` |
+| UI | `healthText` | → `Canvas/HealthText` |
+| | `bombText` | → `Canvas/BombText` |
+| | `weaponText` | → `Canvas/WeaponText` |
+| | `upgradePopupText` | → `Canvas/UpgradePopUpText` |
+| | `upgradePopupDuration` | `1.5` |
+| Feedback | `meleeVisual` | → Transform `Player/MeleeVisual` |
+| | `meleeVisualDuration` | `0.1` |
+| | `playerVisuals` | → `PlayerVisuals` sullo stesso GameObject `Player` |
+
+Riferimenti a None: **nessuno**.
+
+**PlayerVisuals** — tutti i 13 campi serializzati:
 
 | Campo | Valore |
 |---|---|
-| moveSpeed | 5 |
-| projectilePrefab | assegnato → `Projectile.prefab` |
-| projectileSpeed | 10 |
-| fireCooldown | 0.3 |
-| projectileDamage | 1 |
-| firePointDistance | 0.5 |
-| spreadAngle | 20 |
-| spreadCooldownMult | 1.6 |
-| pierceCooldownMult | 1.3 |
-| spreadLifetime | 0.35 |
-| meleeRange | 1.1 |
-| meleeArc | 0.3 |
-| meleeDamageMult | 2 |
-| meleeCooldownMult | 1.4 |
-| bombPrefab | assegnato → `Bomb.prefab` |
-| maxBombs | 3 |
-| bombCooldown | 1 |
-| maxHealth | 6 |
-| invulnerabilityDuration | 0.8 |
-| healthRegenInterval | 5 |
-| healthRegenChance | 0 |
-| contactDamageReduction | 0 |
-| projectileBounces | 0 |
-| hitFlashDuration | 0.1 |
-| hitShakeDuration | 0.15 |
-| hitShakeMagnitude | 0.1 |
-| healthText | assegnato → `HealthText` |
-| bombText | assegnato → `BombText` |
-| weaponText | assegnato → `WeaponText` |
-| upgradePopupText | assegnato → `UpgradePopUpText` |
-| upgradePopupDuration | 1.5 |
-| meleeVisual | assegnato → `MeleeVisual` |
-| meleeVisualDuration | 0.1 |
-| **playerVisuals** | **non serializzato** → **None** a runtime |
+| `walkDown` | 3 sprite da `neo_zero_char_01.png` |
+| `walkUp` | 3 sprite da `neo_zero_char_01.png` |
+| `walkSide` | 3 sprite da `neo_zero_char_01.png` |
+| `frameRate` | `8` |
+| `idleFrame` | `1` |
+| `weaponPivot` | → Transform `Player/WeaponPivot` |
+| `weaponRenderer` | → SpriteRenderer su `Player/WeaponPivot` |
+| `weaponSprites` | 4 sprite da `neo_zero_armi_20x16.png` (0 Single, 1 Spread, 2 Piercing, 3 Melee) |
+| `weaponOrbitRadius` | `0.28` (default nel codice: 0.35) |
+| `weaponSortingOffset` | `1` |
+| `muzzleForward` | `[0.5625, 0.5, 0.6875, 0.75]` |
+| `muzzleUp` | `0.19` |
+| `weaponHideDelay` | `0.15` |
 
-Conseguenza operativa del campo `playerVisuals` non assegnato: `Fire()` usa il ramo di riserva `transform.position + direction * firePointDistance` invece di `PlayerVisuals.MuzzlePosition`. I proiettili partono dal centro del player, non dalla canna dell'arma, finché il riferimento non viene trascinato nell'Inspector.
+Riferimenti a None: **nessuno**.
 
-**`PlayerVisuals`** — campi serializzati:
+**Figli di `Player`:**
 
-| Campo | Valore |
-|---|---|
-| walkDown | 3 sprite da `neo_zero_char_01.png` |
-| walkUp | 3 sprite da `neo_zero_char_01.png` |
-| walkSide | 3 sprite da `neo_zero_char_01.png` |
-| frameRate | 8 |
-| idleFrame | 1 |
-| weaponPivot | assegnato → `WeaponPivot` (fileID 67214885) |
-| weaponRenderer | assegnato → SpriteRenderer di `WeaponPivot` (fileID 67214884) |
-| weaponSprites | 4 sprite da `neo_zero_armi_20x16.png` (0 Single, 1 Spread, 2 Piercing, 3 Melee) |
-| weaponOrbitRadius | 0.28 |
-| weaponSortingOffset | 1 |
-| **muzzleForward** | **non serializzato** → default `{0.5625, 0.5, 0.6875, 0.75}` |
-| **muzzleUp** | **non serializzato** → default `0.19` |
-| **weaponHideDelay** | **non serializzato** → default `0.15` |
+- `MeleeVisual` — **disattivato** (`m_IsActive: 0`), Position `{0, 0, 0}`,
+  **Scale `{0.3, 1.2, 1}`**; SpriteRenderer con sprite quadrato built-in
+  (GUID `311925a0…`), Color bianco, SortingOrder 0. Viene acceso/spento da
+  `PlayerController.ShowMeleeVisual()`.
+- `WeaponPivot` — attivo, Position `{0, 0, 0}`, **Scale `{1, 1, 1}`**;
+  SpriteRenderer con **`m_Sprite: None`**, Color bianco, **SortingOrder 10**,
+  `m_Size {1.25, 1}`. Lo sprite viene assegnato ogni frame da
+  `PlayerVisuals.UpdateWeapon()` pescando da `weaponSprites`.
 
-### Altri componenti in scena
+### GameObject `Canvas` — layer 5 (UI)
 
-- **`CameraShake`** (su `Main Camera`): nessun campo `[SerializeField]`.
-- **`AudioManager`**: `sfxSource` → `SFX_source`, `musicSource` → `Music_source`, tutti e 8 i clip assegnati (`shootSingleClip`, `shootSpreadClip`, `shootPierceClip`, `meleeClip`, `playerHurtClip`, `enemyDeathClip`, `explosionClip`, `pickupClip`), `pitchVariation: 0.2`.
-- **`GameManager`**: `gameOverPanel` → `GameOverPanel`, `victoryPanel` → `VictoryPanel`. Entrambi assegnati.
+RectTransform: anchoredPosition `{0, 0}`, sizeDelta `{0, 0}`, anchorMin/Max `{0, 0}`,
+pivot `{0, 0}`, **Scale `{0, 0, 0}`** (valore salvato; viene sovrascritto a runtime
+dal Canvas in Screen Space Overlay).
 
-### Canvas
+- **Canvas**: `m_RenderMode: 0` (Screen Space – Overlay), SortingOrder 0, PlaneDistance 100, PixelPerfect 0
+- **CanvasScaler**: UiScaleMode 0 (Constant Pixel Size), ScaleFactor 1,
+  ReferencePixelsPerUnit 100, ReferenceResolution `{800, 600}`, ScreenMatchMode 0, MatchWidthOrHeight 0
+- **GraphicRaycaster**: IgnoreReversedGraphics 1, BlockingObjects 0
+
+Gerarchia UI:
 
 ```
-Canvas                          [Canvas + CanvasScaler + GraphicRaycaster]
-├── HealthText                  [TextMeshProUGUI]
-├── BombText                    [TextMeshProUGUI]
-├── WeaponText                  [TextMeshProUGUI]
-├── GameOverPanel               [Image]
-│   ├── GameOverText            [TextMeshProUGUI]
-│   ├── RestartButton           [Image + Button]
-│   │   └── Text (TMP)          [TextMeshProUGUI]
-│   └── MenuButton              [Image + Button]
-│       └── Text (TMP)          [TextMeshProUGUI]
-├── VictoryPanel                [TextMeshProUGUI]
-│   ├── MainMenuButton          [Image + Button]
-│   │   └── Text (TMP)          [TextMeshProUGUI]
-│   └── PlayAgainButton (1)     [Image + Button]
-│       └── Text (TMP)          [TextMeshProUGUI]
-└── UpgradePopUpText            [TextMeshProUGUI]
+Canvas  (layer 5)
+├── HealthText              TextMeshProUGUI
+├── BombText                TextMeshProUGUI
+├── WeaponText              TextMeshProUGUI
+├── GameOverPanel           [DISATTIVO]  Image nera α 0.784
+│   ├── GameOverText        TextMeshProUGUI  "HAI PERSO"
+│   ├── RestartButton       Image + Button → GameManager.RestartGame
+│   │   └── Text (TMP)      TextMeshProUGUI  "Ricomincia"
+│   └── MenuButton          Image + Button → GameManager.GoToMainMenu
+│       └── Text (TMP)      TextMeshProUGUI  "Main Menu"
+├── VictoryPanel            [DISATTIVO]  TextMeshProUGUI  "VITTORIA"
+│   ├── Sfondo              Image  {0.039, 0.063, 0.094, α 0.863}
+│   ├── MainMenuButton      Image + Button → GameManager.GoToMainMenu
+│   │   └── Text (TMP)      TextMeshProUGUI  "Main menu"
+│   └── PlayAgainButton (1) Image + Button → GameManager.RestartGame
+│       └── Text (TMP)      TextMeshProUGUI  "Rigioca"
+└── UpgradePopUpText        [DISATTIVO]  TextMeshProUGUI  "New Text"
 ```
 
-`VictoryPanel` non ha un componente `Image`: il GameObject porta direttamente un `TextMeshProUGUI`, a differenza di `GameOverPanel` che è un `Image`.
+> `VictoryPanel` non ha una propria `Image` di sfondo: porta direttamente il
+> `TextMeshProUGUI` "VITTORIA", e lo sfondo scuro è il figlio `Sfondo`.
+> `GameOverPanel`, invece, ha l'Image sul pannello e il testo in un figlio separato.
 
-Le barre della vita di Boss e MiniBoss **non** stanno su questo Canvas: ogni prefab ha un proprio Canvas annidato (`HealthBar`), quindi `healthBarFill` / `healthBarRoot` puntano a oggetti interni al prefab.
+Layout dei RectTransform:
+
+| Oggetto | anchoredPosition | sizeDelta | anchorMin / anchorMax | pivot |
+|---|---|---|---|---|
+| `HealthText` | `{10, -10}` | `{250, 50}` | `{0,1}` / `{0,1}` | `{0, 1}` |
+| `BombText` | `{10, -77}` | `{200, 50}` | `{0,1}` / `{0,1}` | `{0, 1}` |
+| `WeaponText` | `{10, -115}` | `{350, 50}` | `{0,1}` / `{0,1}` | `{0, 1}` |
+| `UpgradePopUpText` | `{0, -125}` | `{500, 50}` | `{0.5,1}` / `{0.5,1}` | `{0.5, 0.5}` |
+| `GameOverPanel` | `{0, 0}` | `{0, 0}` | `{0,0}` / `{1,1}` (stretch) | `{0.5, 0.5}` |
+| `GameOverText` | `{0, 0}` | `{200, 50}` | `{0.5,0.5}` / `{0.5,0.5}` | `{0.5, 0.5}` |
+| `RestartButton` | `{0, -100}` | `{160, 30}` | `{0.5,0.5}` / `{0.5,0.5}` | `{0.5, 0.5}` |
+| `MenuButton` | `{0, -160}` | `{160, 30}` | `{0.5,0.5}` / `{0.5,0.5}` | `{0.5, 0.5}` |
+| `VictoryPanel` | `{0, 0}` | `{0, 0}` | `{0,0}` / `{1,1}` (stretch) | `{0.5, 0.5}` |
+| `Sfondo` | `{0, 0}` | `{0, 0}` | `{0,0}` / `{1,1}` (stretch) | `{0.5, 0.5}` |
+| `PlayAgainButton (1)` | `{0, -150}` | `{160, 30}` | `{0.5,0.5}` / `{0.5,0.5}` | `{0.5, 0.5}` |
+| `MainMenuButton` | `{0, -200}` | `{160, 30}` | `{0.5,0.5}` / `{0.5,0.5}` | `{0.5, 0.5}` |
+| ogni `Text (TMP)` dei bottoni | `{0, 0}` | `{0, 0}` | `{0,0}` / `{1,1}` (stretch) | `{0.5, 0.5}` |
+
+Tutti gli oggetti UI hanno Scale `{1, 1, 1}` (tranne `Canvas`, `{0, 0, 0}`).
+
+### Aggancio di ogni `TextMeshProUGUI`
+
+| GameObject | Testo salvato | fontSize | Allineamento | Agganciato a |
+|---|---|---|---|---|
+| `Canvas/HealthText` | `Vita: 6/6` | 64 | H 1 (Left), V 256 (Middle) | **`PlayerController.healthText`** |
+| `Canvas/BombText` | `Bombe: 3` | 36 | H 1, V 256 | **`PlayerController.bombText`** |
+| `Canvas/WeaponText` | `Arma: Singolo` | 36 | H 1, V 256 | **`PlayerController.weaponText`** |
+| `Canvas/UpgradePopUpText` | `New Text` | 40 | H 2 (Center), V 512 | **`PlayerController.upgradePopupText`** |
+| `Canvas/GameOverPanel/GameOverText` | `HAI PERSO` | 64 | H 2, V 512 | **nessun campo di script** (testo statico) |
+| `Canvas/VictoryPanel` (sul pannello) | `VITTORIA` | 64 | H 2, V 512 | **nessun campo di script** (testo statico) |
+| `…/RestartButton/Text (TMP)` | `Ricomincia` | 24 | H 2, V 512 | **nessun campo** (etichetta del Button) |
+| `…/MenuButton/Text (TMP)` | `Main Menu` | 24 | H 2, V 512 | **nessun campo** (etichetta del Button) |
+| `…/MainMenuButton/Text (TMP)` | `Main menu` | 24 | H 2, V 512 | **nessun campo** (etichetta del Button) |
+| `…/PlayAgainButton (1)/Text (TMP)` | `Rigioca` | 24 | H 2, V 512 | **nessun campo** (etichetta del Button) |
+
+Tutti i TextMeshProUGUI usano lo stesso font asset (GUID `8f586378…`, esterno a
+`Assets/Sprites`), Color bianco, `enableAutoSizing: 0`, `fontSizeMin: 18`, `fontSizeMax: 72`.
+
+I quattro pannelli/testi agganciati a script sono gli unici referenziati; i restanti sei
+sono etichette statiche.
+
+### Altri oggetti di scena collegati
+
+- **`GameManager`** (Position `{0, 0.0024, 0}`, Scale `{1, 1, 1}`) —
+  `gameOverPanel` → `Canvas/GameOverPanel`, `victoryPanel` → `Canvas/VictoryPanel`. Nessun None.
+- **`RoomManager`** (Position `{0, 0.0024, 0}`, Scale `{1, 1, 1}`):
+  - `startingRoom` → `Room_1`
+  - `finalRoom` → `Boss_Room`
+  - `pickupPrefabs` (3) → `Pickup_Heal`, `Pickup_Speed`, `Pickup_Bomb`
+  - `pickupDropChance` → `0.35` (default nel codice: 0.5)
+  - `permanentUpgradePrefabs` (8) → `Pickup_MaxHealthUp`, `Pickup_DamageUp`, `Pickup_SpeedUp`, `Pickup_FireRateUp`, `HealthRegen`, `MeleeArcUp`, `PickUp_ArmorUp`, `ProjectileBounceUp`
+  - `pixelPerfectCamera` → `PixelPerfectCamera` su `Main Camera`
+  - `defaultReferenceResolution` → `{240, 135}`
+  - `doorIgnoreDelay` → `0.25`
+  - Nessun None.
+- **`AudioManager`** (Position `{0, 0.0024, 0}`, Scale `{1, 1, 1}`):
+  - `sfxSource` → AudioSource su figlio `SFX_source` (Volume 0.2, PlayOnAwake 0, Loop 0, clip None)
+  - `musicSource` → AudioSource su figlio `Music_source` (Volume 0.11, **PlayOnAwake 1**, **Loop 1**, clip None)
+  - clip: `Single.wav`, `Spread.wav`, `Penetrativo.wav`, `melee.wav`, `PlayerHit.wav`, `EnemyDeath.wav`, `Explosion.wav`, `Pickup.wav` — tutti assegnati
+  - `pitchVariation` → `0.2` (default nel codice: 0.1)
+  - Nessun None nei campi dello script.
+- **`EventSystem`** — `EventSystem` + `InputSystemUIInputModule` (Input System package).
+- **`Global Light 2D`** — `Light2D` di tipo Global, Intensity 1, Color bianco.
 
 ---
 
-## 5. Riferimenti mancanti e campi non serializzati
+## 5. Camera
 
-### Campi `[SerializeField]` a `{fileID: 0}` (None)
+### GameObject `Main Camera` — tag `MainCamera`, layer 0
 
-| File | GameObject | Script | Campo |
+**Transform**: Position `{0, 0, -10}`, **Scale `{1, 1, 1}`**, rotazione identità.
+
+**Camera**:
+
+| Proprietà | Valore |
+|---|---|
+| `m_ClearFlags` | 2 (Solid Color) |
+| `m_BackGroundColor` | `{0.19215687, 0.3019608, 0.4745098, 0}` |
+| `orthographic` | **1** (proiezione ortografica) |
+| `orthographic size` | **4.21875** |
+| `field of view` | 34 (non usato in ortografica) |
+| `near clip plane` | 0.3 |
+| `far clip plane` | 1000 |
+| `m_Depth` | -1 |
+| `m_HDR` | 1 |
+| `m_AllowMSAA` | 0 |
+| `m_TargetDisplay` | 0 |
+
+**CameraShake** — nessun campo `[SerializeField]`: durata e ampiezza arrivano come
+argomenti da `PlayerController.TakeDamage` e da `BossBase.Die`.
+
+**AudioListener** — presente, nessuna configurazione.
+
+**UniversalAdditionalCameraData** (URP): RenderShadows 1, CameraType 0 (Base),
+RendererIndex -1, VolumeLayerMask 1, RenderPostProcessing 0, Antialiasing 0,
+Dithering 0, StopNaN 0.
+
+**PixelPerfectCamera** — presente:
+
+| Proprietà | Valore |
+|---|---|
+| **Assets Pixels Per Unit** (`m_AssetsPPU`) | **16** |
+| **Reference Resolution X** (`m_RefResolutionX`) | **240** |
+| **Reference Resolution Y** (`m_RefResolutionY`) | **135** |
+| `m_CropFrame` | 0 (None) |
+| `m_GridSnapping` | 0 (None) |
+| `m_FilterMode` | 0 |
+| `m_UpscaleRT` | 0 |
+| `m_PixelSnapping` | 0 |
+| `m_StretchFill` | 0 |
+
+Coerenze da notare:
+
+- `m_AssetsPPU: 16` corrisponde al PPU di import di **tutte** le texture in
+  `Assets/Sprites/` tranne `neo_zero_props_02_free.png` (vedi ultima sezione).
+- 135 px / (2 × 16 px per unità) = **4.21875**, esattamente l'`orthographic size`
+  salvato: i due valori sono allineati.
+- `RoomManager.defaultReferenceResolution` è anch'esso `{240, 135}`, quindi la
+  risoluzione salvata sulla camera coincide con quella applicata all'ingresso in
+  tutte le stanze tranne `Boss_Room` (che passa a 320×180 → mezza altezza 5.625 unità,
+  sufficiente per la stanza alta 10 unità).
+
+---
+
+## 6. Riferimenti mancanti
+
+Scansione di ogni campo `[SerializeField]` di ogni script del progetto, in scena e nei
+prefab, alla ricerca di `{fileID: 0}` (None) e di array a zero elementi.
+
+### Riferimenti a `None` in campi di script
+
+| Dove | Componente | Campo | Note |
 |---|---|---|---|
-| `Assets/Prefabs/Splitterling 1.prefab` | Splitterling 1 | SplitterController | splitPrefab (intenzionale: non si divide oltre) |
-| `Assets/Prefabs/Boss.prefab` | Fill / Background | Image (componente Unity UI) | m_Material, m_Sprite (su Background) |
-| `Assets/Prefabs/MiniBoss.prefab` | Fill / Background | Image (componente Unity UI) | m_Material, m_Sprite (su Background) |
+| `Splitterling 1.prefab` | `SplitterController` | **`splitPrefab`** | Unico None su un campo di script in tutto il progetto. È coerente col comportamento voluto: chiude la catena di divisione, perché `SpawnEnemiesAroundSelf` esce subito se il prefab è null. |
 
-Nella scena non risulta nessun campo `{fileID: 0}` tra i riferimenti degli script di progetto.
+**Nella scena `SampleScene.unity` non c'è nessun `[SerializeField]` a None.**
+Tutti i riferimenti di `PlayerController`, `PlayerVisuals`, `RoomManager`, `GameManager`,
+`AudioManager`, `DoorTrigger` (×13) e `SecretWall` risultano assegnati.
 
-### Campi aggiunti agli script dopo l'ultimo salvataggio (assenti dallo YAML)
+### Array serializzati a zero elementi
 
-Prendono il valore di default dello script finché scena/prefab non vengono risalvati da Unity.
+| Dove | Componente | Campi vuoti |
+|---|---|---|
+| `Splitter.prefab` | `EnemyVisuals` | `walkDown`, `walkUp`, `walkSide` |
+| `Splitterling 1.prefab` | `EnemyVisuals` | `walkDown`, `walkUp`, `walkSide` |
 
-| Dove | Campo | Default | Effetto |
-|---|---|---|---|
-| `Player` (scena) | `PlayerController.playerVisuals` | None | **i proiettili partono dal centro del player, non dalla canna** — va assegnato a mano |
-| `Player` (scena) | `PlayerVisuals.muzzleForward` | `{0.5625, 0.5, 0.6875, 0.75}` | nessuno finché `playerVisuals` è None |
-| `Player` (scena) | `PlayerVisuals.muzzleUp` | `0.19` | idem |
-| `Player` (scena) | `PlayerVisuals.weaponHideDelay` | `0.15` | l'arma sparisce 0.15 s dopo l'ultimo colpo |
-| `RoomManager` (scena) | `doorIgnoreDelay` | `0.25` | finestra in cui i trigger delle porte vengono ignorati dopo un cambio stanza |
-| `Boss.prefab` | `BossController.minionSpawnRadius` | `1.2` | stesso raggio di evocazione di prima (era fisso nel codice) |
-| `Teleporter.prefab` | `roomHalfWidth`, `roomHalfHeight` | `3`, `3` | limiti entro cui il Teleporter si riposiziona |
+Effetto: `EnemyVisuals.Update()` calcola direzione e frame ma la guardia
+`frames != null && frame < frames.Length` non passa mai, quindi `sr.sprite` non
+viene mai riassegnato. I due Splitter restano allo sprite quadrato del prefab
+(blu e azzurro). Il componente è presente ma inerte; `sr.flipX` viene comunque
+scritto in base alla direzione.
 
-### Asset con riferimenti rotti
+### Riferimenti a `None` su componenti Unity (non script)
 
-- `Assets/Prefabs/old.prefab` — referenzia `NewMonoBehaviourScript`, script inesistente.
+| Dove | Componente | Campo |
+|---|---|---|
+| `Player/WeaponPivot` (scena) | `SpriteRenderer` | `m_Sprite` — assegnato ogni frame da `PlayerVisuals.UpdateWeapon()` |
+| `Boss.prefab` → `HealthBar/Background` | `UI.Image` | `m_Sprite` — Image a colore pieno, non serve uno sprite |
+| `MiniBoss.prefab` → `HealthBar/Background` | `UI.Image` | `m_Sprite` — idem |
+| `AudioManager/SFX_source` (scena) | `AudioSource` | `m_audioClip` — corretto: la sorgente usa solo `PlayOneShot` |
+| `AudioManager/Music_source` (scena) | `AudioSource` | `m_audioClip` — **`PlayOnAwake: 1` e `Loop: 1` ma nessuna clip**: alla partenza non suona nulla, e `AudioManager.StopMusic()` non ha nulla da fermare |
+
+### GUID riferiti ma non presenti in `Assets/`
+
+Questi riferimenti puntano ad asset built-in di Unity o dei pacchetti, non a file del
+progetto. Non sono "mancanti", ma non sono documentabili leggendo `Assets/`:
+
+| GUID | Usato da |
+|---|---|
+| `311925a0…` | sprite quadrato di default: muri e porte di tutte le stanze, `Player/MeleeVisual`, `Splitter`, `Splitterling 1` |
+| `a86470a3…` | sprite di `Bomb.prefab` |
+| `a97c1056…` | materiale degli SpriteRenderer di `Boss` e `MiniBoss` (Sprite-Lit-Default di URP) |
+| `8f586378…` | font asset TMP condiviso da tutti i `TextMeshProUGUI` |
+| `0000000000000000f000000000000000` sub `10907` | sprite UI built-in usato dagli Image `Fill` delle barre della vita |
+| `ca9f5fa9…` | Input Actions asset di `InputSystemUIInputModule` su `EventSystem` |
+
+---
+
+## 7. Campi non serializzati
+
+Confronto sistematico fra i campi `[SerializeField]` dichiarati in ogni script (inclusi
+quelli ereditati da `EnemyBase` e `BossBase`) e le chiavi effettivamente presenti nello
+YAML di ogni componente, in scena e in tutti i prefab.
+
+**Risultato: nessun campo dichiarato risulta assente dallo YAML.**
+
+Tutti i componenti hanno la serie completa dei propri campi serializzati, catena di
+ereditarietà inclusa. Alcuni conteggi di verifica:
+
+| Componente | Campi dichiarati (con ereditati) | Campi nello YAML |
+|---|---|---|
+| `PlayerController` | 34 | 34 |
+| `PlayerVisuals` | 13 | 13 |
+| `BossController` | 4 (`EnemyBase`) + 15 (`BossBase`) + 15 = 34 | 34 |
+| `MinibossController` | 4 + 15 + 3 = 22 | 22 |
+| `TeleporterController` | 4 + 8 = 12 | 12 |
+| `TurretController` | 4 + 4 = 8 | 8 |
+| `DasherController` | 4 + 6 = 10 | 10 |
+| `ShieldedController` | 4 + 4 = 8 | 8 |
+| `SplitterController` | 4 + 4 = 8 | 8 |
+| `EnemyController` | 4 + 1 = 5 | 5 |
+| `EnemyVisuals` | 6 | 6 |
+| `PickupController` | 13 | 13 |
+| `RoomManager` | 8 | 8 |
+| `AudioManager` | 11 | 11 |
+| `RoomCameraSettings` | 1 | 1 |
+
+`CameraShake` e `VectorUtils` non dichiarano campi `[SerializeField]`
+(`VectorUtils` è statica e non è un `MonoBehaviour`).
+
+> Questo era il punto debole storico del progetto: `Teleporter.prefab` era rimasto
+> indietro e non serializzava `contactDamage`, `hitFlashDuration`, `deathEffectDuration`,
+> `roomHalfWidth` e `roomHalfHeight`, che a runtime cadevano sui default del codice.
+> Nello stato attuale il prefab è stato riaperto e risalvato in Unity, e quei cinque
+> campi sono presenti nello YAML.
+
+### Casi affini (non "assenti", ma con lo stesso effetto pratico)
+
+Non sono campi mancanti dallo YAML, ma valgono la stessa attenzione perché a runtime
+il componente si comporta come se il valore non ci fosse:
+
+| Componente | Campo | Effetto pratico |
+|---|---|---|
+| `Splitter` / `Splitterling 1` → `EnemyVisuals` | `walkDown`, `walkUp`, `walkSide` serializzati **vuoti** | nessun frame direzionale: lo sprite non cambia mai. `frameRate` e `idleFrame` restano senza effetto, mentre `flipX` continua a essere aggiornato. |
+| `Splitterling 1` → `SplitterController` | `splitPrefab` a **None** | nessuna ulteriore divisione, e nessuna registrazione in `RoomManager.RegisterEnemySpawn` (la guardia `prefab == null` esce prima). |
+| `Music_source` → `AudioSource` | `m_audioClip` a **None** con `PlayOnAwake: 1` | nessuna musica di sottofondo, nonostante la sorgente e il riferimento in `AudioManager.musicSource` siano configurati. |
+
+### Campi impostati solo a runtime (per costruzione)
+
+Non serializzati perché il valore arriva da codice, non dall'Inspector:
+
+| Componente | Campi | Chi li imposta |
+|---|---|---|
+| `ProjectileController` | `damage`, `piercing`, `bouncesLeft` | `PlayerController.SpawnProjectile()` via `SetDamage` / `SetPiercing` / `SetBounces`; solo `lifetime` è serializzato (`3`) ed è sovrascritto con `spreadLifetime` (`0.35`) per l'arma Spread |
+| `CameraShake` | durata e ampiezza | argomenti di `Shake()` da `PlayerController.TakeDamage` (`0.15` / `0.1`) e `BossBase.Die` (valori del prefab) |
+| `EnemyBase` | `currentHealth`, `baseSpriteColor`, `player` | `Awake()` e `Start()` |
+
+---
+
+## Import degli sprite
+
+Impostazioni lette da ogni `.png.meta` in `Assets/Sprites/`.
+Sprite Mode: 1 = Single, 2 = Multiple. Filter Mode: 0 = Point, 1 = Bilinear.
+Tutte le texture hanno `enableMipMap: 0`, `maxTextureSize: 2048`, `spriteExtrude: 1`.
+
+| Texture | Pixels Per Unit | Filter Mode | Sprite Mode | Sprite ritagliati |
+|---|---|---|---|---|
+| `esplAI_estesa.png` | 16 | Point | Single | 1 |
+| `nemico_shield_24_1.png` | 16 | Point | Multiple | 1 |
+| `nemico_teleporter_24_1.png` | 16 | Point | Multiple | 1 |
+| `neo_zero_armi_20x16.png` | 16 | Point | Multiple | 4 |
+| `neo_zero_boss_128x96.png` | 16 | Point | Multiple | 12 |
+| `neo_zero_buildings_02.png` | 16 | Point | Multiple | 21 |
+| `neo_zero_char_01.png` | 16 | Point | Multiple | 27 |
+| `neo_zero_dasher_128x72_1.png` | 16 | Point | Multiple | 12 |
+| `neo_zero_miniboss_128x72.png` | 16 | Point | Multiple | 12 |
+| `neo_zero_pickup_AI_64x48.png` | 16 | Point | Multiple | 11 |
+| **`neo_zero_props_02_free.png`** | **100** | **Bilinear** | Multiple | 27 |
+| `neo_zero_shielded_96x72.png` | 16 | Point | Multiple | 12 |
+| `neo_zero_tileset_03.png` | 16 | Point | Multiple | 121 |
+| `neo_zero_turret_256x32.png` | 16 | Point | Multiple | 8 |
+| `neo_zero_walker_96x72.png` | 16 | Point | Multiple | 12 |
+| `projAI_nemico_16.png` | 16 | Point | Single | 1 |
+| `projAI_player_16.png` | 16 | Point | Single | 1 |
+
+### Texture fuori standard
+
+**`neo_zero_props_02_free.png` — PPU 100 e Filter Mode Bilinear.**
+
+È l'unica delle 17 texture che devia da entrambi i valori usati ovunque:
+
+- **PPU 100 invece di 16**: `PixelPerfectCamera.m_AssetsPPU` è 16, quindi questa
+  texture verrebbe disegnata a 1/6,25 della dimensione delle altre e i suoi pixel non
+  cadrebbero sulla griglia della camera.
+- **Filter Mode Bilinear invece di Point**: l'interpolazione sfoca i pixel, in contrasto
+  con la resa nitida di tutto il resto.
+
+Nessun prefab e nessun oggetto della scena referenzia attualmente questa texture: è
+importata nel progetto ma non usata, quindi la deviazione non ha effetto a runtime.
+
+Le altre 16 texture sono tutte coerenti: **PPU 16** (allineato a `m_AssetsPPU` della
+`PixelPerfectCamera`) e **Filter Mode Point**.
+
+### Note sugli atlas
+
+- `neo_zero_tileset_03.png` (121 sprite) alimenta i Tilemap `Floor` di tutte le stanze
+  ed è usato **solo** dalla scena (49 riferimenti), da nessun prefab.
+- `neo_zero_char_01.png` (27 sprite) fornisce i 9 frame usati da `PlayerVisuals`
+  (3 per direzione).
+- `neo_zero_pickup_AI_64x48.png` (11 sprite) è condiviso da tutti e 11 i prefab di pickup,
+  uno sprite ciascuno.
+- Gli atlas dei nemici (`boss`, `miniboss`, `dasher`, `walker`, `shielded`) hanno 12 sprite
+  ciascuno = 4 frame × 3 direzioni, esattamente quanto serve a `EnemyVisuals`.
+- `neo_zero_turret_256x32.png` ha 8 sprite = le 8 direzioni di `TurretController.directionSprites`.
+- `neo_zero_armi_20x16.png` ha 4 sprite = le 4 armi di `PlayerVisuals.weaponSprites`.
+- Due atlas non sono referenziati né dalla scena né da alcun prefab:
+  `neo_zero_buildings_02.png` (21 sprite) e `neo_zero_props_02_free.png` (27 sprite).

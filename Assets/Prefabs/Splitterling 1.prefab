@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 1512895821485884693}
   - component: {fileID: 370690687375075051}
   - component: {fileID: 2970779272548060918}
+  - component: {fileID: 7073771883400122479}
   m_Layer: 0
   m_Name: Splitterling 1
   m_TagString: Enemy
@@ -49,6 +50,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SplitterController
   maxHealth: 1
   contactDamage: 1
+  hitFlashDuration: 0.08
+  deathEffectDuration: 0.2
   moveSpeed: 3.5
   splitPrefab: {fileID: 0}
   splitCount: 2
@@ -185,3 +188,21 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 1, y: 1}
   m_EdgeRadius: 0
+--- !u!114 &7073771883400122479
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9221788800551908449}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8b58d711371d9c189b5d5320a22a8ad1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyVisuals
+  walkDown: []
+  walkUp: []
+  walkSide: []
+  frameRate: 6
+  idleFrame: 0
+  moveThreshold: 0.01
