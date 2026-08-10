@@ -15,8 +15,19 @@ public class RoomManager : MonoBehaviour
     [SerializeField] private GameObject[] pickupPrefabs;
     [SerializeField] [Range(0f, 1f)] private float pickupDropChance = 0.5f;
 
+    [Header("Posizionamento dei drop")]
+    // Spazio che il pickup deve avere libero attorno a sé
+    [SerializeField] private float pickupRadius = 0.3f;
+    // Di quanto ci si allontana dal centro a ogni tentativo fallito
+    [SerializeField] private float placementStep = 0.5f;
+    [SerializeField] private int maxPlacementAttempts = 12;
+
     [Header("Potenziamenti Permanenti")]
     [SerializeField] private GameObject[] permanentUpgradePrefabs;
+
+    [Header("Minimappa")]
+    // Facoltativa: senza, il gioco funziona esattamente come prima
+    [SerializeField] private MinimapController minimap;
 
     [Header("Camera")]
     [SerializeField] private PixelPerfectCamera pixelPerfectCamera;
@@ -27,6 +38,8 @@ public class RoomManager : MonoBehaviour
     // fermo sopra una porta, il suo trigger scatterebbe subito. Per questo
     // ogni cambio stanza e ogni sblocco ignorano le porte per qualche frame.
     [SerializeField] private float doorIgnoreDelay = 0.25f;
+
+    private const string WallTag = "Wall";
 
     private GameObject currentRoom;
     private int enemiesRemaining;
@@ -69,7 +82,19 @@ public class RoomManager : MonoBehaviour
         }
     }
 
-    private void EnterRoom(GameObject room)
+    // Stanze assegnate da codice quando il dungeon è generato a runtime:
+    // vanno impostate prima di Start(), che entra nella stanza iniziale.
+    public void SetStartingRoom(GameObject room)
+    {
+        startingRoom = room;
+    }
+
+    public void SetFinalRoom(GameObject room)
+    {
+        finalRoom = room;
+    }
+
+    public void EnterRoom(GameObject room)
     {
         ActivateOnly(room);
         ApplyCameraFor(room);
@@ -84,6 +109,8 @@ public class RoomManager : MonoBehaviour
         // Una stanza finale già vuota (o ripulita in una visita precedente)
         // deve comunque far vincere la partita
         if (roomCleared) CheckVictory();
+
+        if (minimap != null) minimap.SetCurrentRoom(room);
     }
 
     public void RegisterEnemyDeath()
@@ -135,7 +162,35 @@ public class RoomManager : MonoBehaviour
         GameObject chosenUpgrade = permanentUpgradePrefabs[index];
 
         Transform parent = parentRoom != null ? parentRoom.transform : null;
-        Instantiate(chosenUpgrade, position, Quaternion.identity, parent);
+        Instantiate(chosenUpgrade, FindFreePosition(position), Quaternion.identity, parent);
+    }
+
+    // Il centro della stanza può essere occupato da un ostacolo: in quel caso
+    // si prova sempre più lontano, in direzioni casuali. Se non si trova nulla
+    // il drop resta al centro: meglio un pickup scomodo che nessun pickup.
+    private Vector3 FindFreePosition(Vector3 center)
+    {
+        if (IsFree(center)) return center;
+
+        for (int i = 1; i <= maxPlacementAttempts; i++)
+        {
+            Vector2 offset = VectorUtils.FromAngle(Random.Range(0f, 360f)) * (placementStep * i);
+            Vector3 candidate = center + (Vector3)offset;
+
+            if (IsFree(candidate)) return candidate;
+        }
+
+        return center;
+    }
+
+    private bool IsFree(Vector3 position)
+    {
+        foreach (Collider2D hit in Physics2D.OverlapCircleAll(position, pickupRadius))
+        {
+            if (hit.CompareTag(WallTag)) return false;
+        }
+
+        return true;
     }
 
     // Ogni stanza può chiedere una risoluzione di riferimento diversa
@@ -170,7 +225,7 @@ public class RoomManager : MonoBehaviour
         int index = Random.Range(0, pickupPrefabs.Length);
         GameObject chosenPickup = pickupPrefabs[index];
 
-        Vector3 spawnPosition = room.transform.position;
+        Vector3 spawnPosition = FindFreePosition(room.transform.position);
         Instantiate(chosenPickup, spawnPosition, Quaternion.identity, room.transform);
     }
 

@@ -8,6 +8,13 @@ public class SecretWall : MonoBehaviour
 
     private bool isRevealed = false;
 
+    // Come in DoorTrigger: collega il muro da codice invece che nell'Inspector.
+    public void Connect(GameObject room, Vector2 spawnPosition)
+    {
+        targetRoom = room;
+        playerSpawnPosition = spawnPosition;
+    }
+
     // NB: non chiamare questo metodo "Destroy": nasconderebbe Object.Destroy
     // dentro questa classe e renderebbe impossibile chiamarlo senza qualificarlo.
     public void Reveal()
