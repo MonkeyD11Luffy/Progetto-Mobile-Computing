@@ -112,6 +112,10 @@ MonoBehaviour:
   contactDamage: 1
   hitFlashDuration: 0.08
   deathEffectDuration: 0.2
+  obstacleCheckDistance: 1
+  avoidanceStrength: 1
+  pathRecalculateInterval: 0.3
+  waypointReachedDistance: 0.3
   moveSpeed: 1.3
   shieldVisual: {fileID: 2031629430023782870}
   shieldArc: 0.3

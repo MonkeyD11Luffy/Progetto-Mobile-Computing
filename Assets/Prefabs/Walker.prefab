@@ -111,6 +111,10 @@ MonoBehaviour:
   contactDamage: 1
   hitFlashDuration: 0.15
   deathEffectDuration: 0.2
+  obstacleCheckDistance: 1
+  avoidanceStrength: 1
+  pathRecalculateInterval: 0.3
+  waypointReachedDistance: 0.3
   moveSpeed: 2
 --- !u!50 &5165655135945016852
 Rigidbody2D:

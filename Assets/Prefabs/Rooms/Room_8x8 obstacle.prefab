@@ -2615,6 +2615,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1943702891756042844}
   - component: {fileID: 2602681832810397870}
+  - component: {fileID: 2755699851038108002}
   m_Layer: 0
   m_Name: Room_8x8 obstacle
   m_TagString: Untagged
@@ -2663,8 +2664,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5bd1f39df11091684bd8173882e3ddb4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoomBounds
-  halfWidth: 3
-  halfHeight: 3
+  halfWidth: 4
+  halfHeight: 4
+--- !u!114 &2755699851038108002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7914607383602842789}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3cd34678c2112cee8a43e4094885643b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoomNavGrid
+  cellSize: 0.5
 --- !u!1 &8188574223271338845
 GameObject:
   m_ObjectHideFlags: 0

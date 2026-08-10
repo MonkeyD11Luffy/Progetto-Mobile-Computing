@@ -1,7 +1,8 @@
 using UnityEngine;
 
-// Gemello di PlayerVisuals per i nemici: nessun input, la direzione arriva
-// dalla velocità del Rigidbody2D.
+// Gemello di PlayerVisuals per i nemici: nessun input, la direzione arriva da
+// EnemyBase.MoveDirection (con ripiego sulla velocità del Rigidbody2D per gli
+// oggetti che non hanno un EnemyBase).
 //
 // Tocca solo sr.sprite e sr.flipX. Colore e visibilità restano di chi li gestisce
 // già: EnemyBase (lampo di danno), DasherController (telegrafo),
@@ -21,6 +22,7 @@ public class EnemyVisuals : MonoBehaviour
 
     private SpriteRenderer sr;
     private Rigidbody2D rb;
+    private EnemyBase enemy;
     private Vector2 lastFacing = Vector2.down;
     private float frameTimer;
     private int cycleStep;
@@ -29,18 +31,22 @@ public class EnemyVisuals : MonoBehaviour
     {
         sr = GetComponent<SpriteRenderer>();
         rb = GetComponent<Rigidbody2D>();
+        enemy = GetComponent<EnemyBase>();
     }
 
     private void Update()
     {
-        // I nemici senza Rigidbody2D (es. torrette statiche) non hanno una direzione da cui partire
-        if (rb == null) return;
+        // Chi non ha né EnemyBase né Rigidbody2D (es. torrette statiche) non ha
+        // una direzione da cui partire
+        if (enemy == null && rb == null) return;
 
-        // 1) Direzione dalla velocità
-        Vector2 velocity = rb.linearVelocity;
-        bool isMoving = velocity.sqrMagnitude > moveThreshold;
+        // 1) Direzione del movimento. EnemyBase la espone perché nel ramo con
+        // pathfinding il movimento avviene con MovePosition e il Rigidbody2D
+        // resta fermo a velocità zero.
+        Vector2 movement = enemy != null ? enemy.MoveDirection : rb.linearVelocity;
+        bool isMoving = movement.sqrMagnitude > moveThreshold;
 
-        if (isMoving) lastFacing = velocity.normalized;
+        if (isMoving) lastFacing = movement.normalized;
 
         // 2) Frame del ciclo di camminata
         if (isMoving)

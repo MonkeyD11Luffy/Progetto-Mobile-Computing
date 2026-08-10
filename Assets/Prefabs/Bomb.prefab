@@ -49,6 +49,11 @@ MonoBehaviour:
   explosionRadius: 1.5
   explosionDamage: 3
   explosionEffectPrefab: {fileID: 7318081075552425078, guid: 677f025063ca4aeceb402f5fe05c281d, type: 3}
+  fuseSprites:
+  - {fileID: 1812814157110334840, guid: 05be91b0cd01871c99e3eb59ff73367f, type: 3}
+  - {fileID: -6149916597694104060, guid: 05be91b0cd01871c99e3eb59ff73367f, type: 3}
+  - {fileID: 40424841103293064, guid: 05be91b0cd01871c99e3eb59ff73367f, type: 3}
+  - {fileID: -9022009606838504396, guid: 05be91b0cd01871c99e3eb59ff73367f, type: 3}
 --- !u!212 &2373096815483264094
 SpriteRenderer:
   serializedVersion: 2
@@ -98,8 +103,8 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: -2413806693520163455, guid: a86470a33a6bf42c4b3595704624658b, type: 3}
-  m_Color: {r: 0, g: 0, b: 0, a: 1}
+  m_Sprite: {fileID: 1812814157110334840, guid: 05be91b0cd01871c99e3eb59ff73367f, type: 3}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0

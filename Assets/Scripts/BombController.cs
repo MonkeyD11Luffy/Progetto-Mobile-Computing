@@ -11,9 +11,34 @@ public class BombController : MonoBehaviour
     [SerializeField] private int explosionDamage = 3;
     [SerializeField] private GameObject explosionEffectPrefab;
 
+    [Header("Animazione miccia")]
+    // Dal più lungo al più corto: l'ultimo è quello mostrato allo scoppio
+    [SerializeField] private Sprite[] fuseSprites;
+
+    private SpriteRenderer sr;
+    private float timer;
+
     private void Start()
     {
         Invoke(nameof(Explode), fuseTime);
+
+        sr = GetComponent<SpriteRenderer>();
+        timer = fuseTime;
+    }
+
+    private void Update()
+    {
+        if (sr == null || fuseSprites == null || fuseSprites.Length == 0) return;
+
+        timer -= Time.deltaTime;
+
+        // 0 all'inizio, 1 allo scoppio
+        float t = Mathf.Clamp01(1f - timer / fuseTime);
+
+        // Il Min evita di sforare l'array quando t vale esattamente 1
+        int i = Mathf.Min(fuseSprites.Length - 1, Mathf.FloorToInt(t * fuseSprites.Length));
+
+        sr.sprite = fuseSprites[i];
     }
 
     private void Explode()

@@ -31,7 +31,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 2, y: 2, z: 0}
-  m_LocalScale: {x: 0.5, y: 0.5, z: 1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -52,6 +52,10 @@ MonoBehaviour:
   contactDamage: 1
   hitFlashDuration: 0.08
   deathEffectDuration: 0.2
+  obstacleCheckDistance: 1
+  avoidanceStrength: 1
+  pathRecalculateInterval: 0.3
+  waypointReachedDistance: 0.3
   moveSpeed: 3.5
   splitPrefab: {fileID: 0}
   splitCount: 2
@@ -105,8 +109,8 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
-  m_Color: {r: 0.4009434, g: 0.831853, b: 1, a: 1}
+  m_Sprite: {fileID: 4303449009119613035, guid: b071ffba5cb95414ca9111a80f6d6cf3, type: 3}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -186,7 +190,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 0.5, y: 0.9}
   m_EdgeRadius: 0
 --- !u!114 &7073771883400122479
 MonoBehaviour:
@@ -200,9 +204,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8b58d711371d9c189b5d5320a22a8ad1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyVisuals
-  walkDown: []
-  walkUp: []
-  walkSide: []
+  walkDown:
+  - {fileID: 4303449009119613035, guid: b071ffba5cb95414ca9111a80f6d6cf3, type: 3}
+  - {fileID: 8221793323272851459, guid: b071ffba5cb95414ca9111a80f6d6cf3, type: 3}
+  - {fileID: 4903551771205920784, guid: b071ffba5cb95414ca9111a80f6d6cf3, type: 3}
+  - {fileID: 3342091157818938946, guid: b071ffba5cb95414ca9111a80f6d6cf3, type: 3}
+  walkUp:
+  - {fileID: -6153918035120087040, guid: b071ffba5cb95414ca9111a80f6d6cf3, type: 3}
+  - {fileID: -4139166805554858585, guid: b071ffba5cb95414ca9111a80f6d6cf3, type: 3}
+  - {fileID: 5097377343736224200, guid: b071ffba5cb95414ca9111a80f6d6cf3, type: 3}
+  - {fileID: 4062867881348355310, guid: b071ffba5cb95414ca9111a80f6d6cf3, type: 3}
+  walkSide:
+  - {fileID: -7863023125175856473, guid: b071ffba5cb95414ca9111a80f6d6cf3, type: 3}
+  - {fileID: 5855667574571913772, guid: b071ffba5cb95414ca9111a80f6d6cf3, type: 3}
+  - {fileID: -3567544396381446234, guid: b071ffba5cb95414ca9111a80f6d6cf3, type: 3}
+  - {fileID: -2125576270745858536, guid: b071ffba5cb95414ca9111a80f6d6cf3, type: 3}
   frameRate: 6
   idleFrame: 0
   moveThreshold: 0.01

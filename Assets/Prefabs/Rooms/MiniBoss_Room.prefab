@@ -1731,6 +1731,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4093327021684130474}
   - component: {fileID: 1074831169091730823}
+  - component: {fileID: 4439705658862005846}
   m_Layer: 0
   m_Name: MiniBoss_Room
   m_TagString: Untagged
@@ -1777,6 +1778,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RoomBounds
   halfWidth: 5
   halfHeight: 4
+--- !u!114 &4439705658862005846
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4750870882565370405}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3cd34678c2112cee8a43e4094885643b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoomNavGrid
+  cellSize: 0.25
 --- !u!1 &4772397144646161890
 GameObject:
   m_ObjectHideFlags: 0
