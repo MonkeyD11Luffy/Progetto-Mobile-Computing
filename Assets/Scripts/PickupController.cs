@@ -86,6 +86,11 @@ public class PickupController : MonoBehaviour
 
         if (AudioManager.Instance != null) AudioManager.Instance.PlayPickup();
 
+        // In una stanza tesoro si sceglie un potenziamento solo: prendendone uno
+        // gli altri spariscono. InParent perché il pickup è figlio della stanza.
+        TreasureRoom treasureRoom = GetComponentInParent<TreasureRoom>();
+        if (treasureRoom != null) treasureRoom.OnUpgradeTaken(gameObject);
+
         Destroy(gameObject);
     }
 

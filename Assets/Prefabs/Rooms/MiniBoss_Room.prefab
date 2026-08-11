@@ -1732,6 +1732,7 @@ GameObject:
   - component: {fileID: 4093327021684130474}
   - component: {fileID: 1074831169091730823}
   - component: {fileID: 4439705658862005846}
+  - component: {fileID: 4840689627033798939}
   m_Layer: 0
   m_Name: MiniBoss_Room
   m_TagString: Untagged
@@ -1791,6 +1792,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoomNavGrid
   cellSize: 0.25
+  agentRadius: 0.7
+--- !u!114 &4840689627033798939
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4750870882565370405}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd0a33cdf0247faa982e4e2bde7194ba, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoomMusic
+  combatClip: {fileID: 8300000, guid: 3f2811326c808c04895ed8372d8e8545, type: 3}
+  clearedClip: {fileID: 8300000, guid: 47a917d45a34d3befa1a39d28f54492e, type: 3}
 --- !u!1 &4772397144646161890
 GameObject:
   m_ObjectHideFlags: 0

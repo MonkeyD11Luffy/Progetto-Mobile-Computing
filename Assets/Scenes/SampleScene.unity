@@ -3999,8 +3999,9 @@ MonoBehaviour:
   bossRoomPrefab: {fileID: 6026497899338448986, guid: e3b4c44132724f8f398414f76219b657, type: 3}
   minibossRoomPrefab: {fileID: 4750870882565370405, guid: 2d897e4466c4cd8f9934497a369275b8, type: 3}
   secretRoomPrefab: {fileID: 427882580710972496, guid: 46775a35c75be5f6ea89c1fea9a946ef, type: 3}
+  treasureRoomPrefab: {fileID: 427882580710972496, guid: a102698f197cfe61d8935bbf5392703a, type: 3}
   secretWallTint: {r: 0.85, g: 0.85, b: 0.9, a: 1}
-  roomCount: 8
+  roomCount: 12
   gridSize: 9
   enemyPrefabs:
   - {fileID: 8068514365202342125, guid: 27a5945b75ba9a124a96c016f0b75f5f, type: 3}
@@ -4147,6 +4148,8 @@ MonoBehaviour:
   adjacentColor: {r: 0.35, g: 0.35, b: 0.4, a: 0.6}
   bossColor: {r: 0.9, g: 0.2, b: 0.2, a: 1}
   minibossColor: {r: 0.9, g: 0.5, b: 0.15, a: 1}
+  treasureColor: {r: 0.95, g: 0.85, b: 0.3, a: 1}
+  unvisitedTint: 0.5
 --- !u!1 &1758450759
 GameObject:
   m_ObjectHideFlags: 0

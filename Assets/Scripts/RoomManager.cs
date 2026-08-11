@@ -25,6 +25,10 @@ public class RoomManager : MonoBehaviour
     [Header("Potenziamenti Permanenti")]
     [SerializeField] private GameObject[] permanentUpgradePrefabs;
 
+    // Li legge il DungeonGenerator per riempire i piedistalli della stanza
+    // tesoro: la lista è una sola e sta qui, dove la usano già i drop dei boss
+    public GameObject[] PermanentUpgradePrefabs => permanentUpgradePrefabs;
+
     [Header("Minimappa")]
     // Facoltativa: senza, il gioco funziona esattamente come prima
     [SerializeField] private MinimapController minimap;
@@ -104,6 +108,8 @@ public class RoomManager : MonoBehaviour
         enemiesRemaining = CountEnemiesInRoom(room);
         roomCleared = enemiesRemaining <= 0;
 
+        ApplyRoomMusic(room, roomCleared);
+
         SetDoorsActive(room, roomCleared);
 
         // Una stanza finale già vuota (o ripulita in una visita precedente)
@@ -121,6 +127,7 @@ public class RoomManager : MonoBehaviour
         if (enemiesRemaining > 0 || roomCleared || currentRoom == null) return;
 
         roomCleared = true;
+        ApplyRoomMusic(currentRoom, true);
         SetDoorsActive(currentRoom, true);
         doorIgnoreTimer = doorIgnoreDelay;
 
@@ -138,6 +145,7 @@ public class RoomManager : MonoBehaviour
         if (roomCleared && currentRoom != null)
         {
             roomCleared = false;
+            ApplyRoomMusic(currentRoom, false);
             SetDoorsActive(currentRoom, false);
         }
     }
@@ -191,6 +199,17 @@ public class RoomManager : MonoBehaviour
         }
 
         return true;
+    }
+
+    // La musica dipende dallo stato della stanza: una traccia con i nemici
+    // vivi, un'altra quando è liberata. Una stanza senza RoomMusic chiede
+    // silenzio, così non si trascina dietro la musica della stanza precedente.
+    private void ApplyRoomMusic(GameObject room, bool cleared)
+    {
+        if (AudioManager.Instance == null || room == null) return;
+
+        RoomMusic music = room.GetComponent<RoomMusic>();
+        AudioManager.Instance.PlayMusic(music != null ? music.ClipFor(cleared) : null);
     }
 
     // Ogni stanza può chiedere una risoluzione di riferimento diversa

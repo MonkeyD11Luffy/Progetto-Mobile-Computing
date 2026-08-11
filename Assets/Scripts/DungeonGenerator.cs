@@ -19,6 +19,7 @@ public class DungeonGenerator : MonoBehaviour
     [SerializeField] private GameObject bossRoomPrefab;
     [SerializeField] private GameObject minibossRoomPrefab;
     [SerializeField] private GameObject secretRoomPrefab;
+    [SerializeField] private GameObject treasureRoomPrefab;
     // Tinta del muro sfondabile: unico indizio che dietro c'è qualcosa
     [SerializeField] private Color secretWallTint = new Color(0.85f, 0.85f, 0.9f, 1f);
     [SerializeField] private int roomCount = 8;
@@ -94,13 +95,14 @@ public class DungeonGenerator : MonoBehaviour
         Vector2Int startCell = cells[0];
         Vector2Int bossCell = FarthestCell(cells, startCell);
         Vector2Int? minibossCell = PickMinibossCell(cells, startCell, bossCell);
+        Vector2Int? treasureCell = PickTreasureCell(cells, startCell, bossCell, minibossCell);
 
         // TEMPORANEO: serve a controllare in playtest quanto minibossDistanceBias
         // spinge il miniboss lontano dalla partenza.
         Debug.Log($"Dungeon: distanza boss {Distance(startCell, bossCell)}, " +
                   $"distanza miniboss {(minibossCell.HasValue ? Distance(startCell, minibossCell.Value).ToString() : "nessuna")}");
 
-        InstantiateRooms(cells, startCell, bossCell, minibossCell);
+        InstantiateRooms(cells, startCell, bossCell, minibossCell, treasureCell);
 
         if (!rooms.ContainsKey(startCell) || !rooms.ContainsKey(bossCell)) return;
 
@@ -113,10 +115,12 @@ public class DungeonGenerator : MonoBehaviour
         roomManager.SetStartingRoom(rooms[startCell]);
         roomManager.SetFinalRoom(rooms[bossCell]);
 
+        PopulateTreasureRoom(treasureCell, roomManager.PermanentUpgradePrefabs);
+
         // In coda alla generazione: la minimappa deve vedere le stanze già
         // create. Il RoomManager entrerà nella stanza iniziale in Start(),
         // colorandola come corrente.
-        if (minimap != null) minimap.Build(rooms, connections, startCell, bossCell, minibossCell);
+        if (minimap != null) minimap.Build(rooms, connections, startCell, bossCell, minibossCell, treasureCell);
 
         VerifyConnectivity(startCell);
     }
@@ -137,6 +141,7 @@ public class DungeonGenerator : MonoBehaviour
         ValidateRoomPrefab(bossRoomPrefab);
         ValidateRoomPrefab(minibossRoomPrefab);
         ValidateRoomPrefab(secretRoomPrefab);
+        ValidateRoomPrefab(treasureRoomPrefab);
     }
 
     private static void ValidateRoomPrefab(GameObject prefab)
@@ -289,13 +294,52 @@ public class DungeonGenerator : MonoBehaviour
         return candidates[candidates.Count - 1];
     }
 
+    // --- 2b. stanza tesoro ---------------------------------------------------
+
+    // Il tesoro va in fondo a un ramo: si sorteggia fra i vicoli ciechi, cioè le
+    // celle con un solo vicino occupato, così ci si arriva deviando dal percorso
+    // principale invece di trovarselo per strada. Se non ce ne sono (dungeon a
+    // corridoio, o gli unici vicoli ciechi sono partenza, boss e miniboss) si
+    // ripiega su una cella qualsiasi: la stanza tesoro deve esserci sempre.
+    // Resta null solo se il prefab non è configurato o se il dungeon è fatto di
+    // sole celle riservate.
+    //
+    // Il conteggio dei vicini è sulla griglia e non su connections, che a questo
+    // punto è ancora vuota: le porte vengono collegate più avanti. Una cella con
+    // un solo vicino sulla griglia resta comunque un vicolo cieco, perché i
+    // collegamenti veri sono un sottoinsieme di quelli possibili.
+    private Vector2Int? PickTreasureCell(List<Vector2Int> cells, Vector2Int startCell, Vector2Int bossCell, Vector2Int? minibossCell)
+    {
+        if (treasureRoomPrefab == null) return null;
+
+        HashSet<Vector2Int> occupied = new HashSet<Vector2Int>(cells);
+
+        List<Vector2Int> deadEnds = new List<Vector2Int>();
+        List<Vector2Int> fallback = new List<Vector2Int>();
+
+        foreach (Vector2Int cell in cells)
+        {
+            if (cell == startCell || cell == bossCell) continue;
+            if (minibossCell.HasValue && cell == minibossCell.Value) continue;
+
+            if (CountOccupiedNeighbours(occupied, cell) == 1) deadEnds.Add(cell);
+            else fallback.Add(cell);
+        }
+
+        List<Vector2Int> candidates = deadEnds.Count > 0 ? deadEnds : fallback;
+
+        if (candidates.Count == 0) return null;
+
+        return candidates[Random.Range(0, candidates.Count)];
+    }
+
     // --- 3. istanziamento ----------------------------------------------------
 
-    private void InstantiateRooms(List<Vector2Int> cells, Vector2Int startCell, Vector2Int bossCell, Vector2Int? minibossCell)
+    private void InstantiateRooms(List<Vector2Int> cells, Vector2Int startCell, Vector2Int bossCell, Vector2Int? minibossCell, Vector2Int? treasureCell)
     {
         foreach (Vector2Int cell in cells)
         {
-            GameObject prefab = PickRoomPrefab(cell, startCell, bossCell, minibossCell);
+            GameObject prefab = PickRoomPrefab(cell, startCell, bossCell, minibossCell, treasureCell);
             if (prefab == null) continue;
 
             rooms.Add(cell, CreateRoom(prefab));
@@ -314,10 +358,11 @@ public class DungeonGenerator : MonoBehaviour
         return room;
     }
 
-    private GameObject PickRoomPrefab(Vector2Int cell, Vector2Int startCell, Vector2Int bossCell, Vector2Int? minibossCell)
+    private GameObject PickRoomPrefab(Vector2Int cell, Vector2Int startCell, Vector2Int bossCell, Vector2Int? minibossCell, Vector2Int? treasureCell)
     {
         if (cell == bossCell && bossRoomPrefab != null) return bossRoomPrefab;
         if (minibossCell.HasValue && cell == minibossCell.Value) return minibossRoomPrefab;
+        if (treasureCell.HasValue && cell == treasureCell.Value) return treasureRoomPrefab;
         if (cell == startCell) return roomPrefabs[0];
 
         return roomPrefabs[Random.Range(0, roomPrefabs.Length)];
@@ -568,6 +613,20 @@ public class DungeonGenerator : MonoBehaviour
         if (minibossPrefab == null) return;
 
         Instantiate(minibossPrefab, room.transform.position, Quaternion.identity, room.transform);
+    }
+
+    // I tre potenziamenti sulla stanza tesoro. Se la cella non è stata scelta,
+    // se il prefab non ha il componente o se non ci sono potenziamenti
+    // configurati non succede nulla: la stanza resta una stanza qualsiasi.
+    private void PopulateTreasureRoom(Vector2Int? treasureCell, GameObject[] upgradePrefabs)
+    {
+        if (!treasureCell.HasValue) return;
+        if (!rooms.TryGetValue(treasureCell.Value, out GameObject room)) return;
+
+        TreasureRoom treasureRoom = room.GetComponent<TreasureRoom>();
+        if (treasureRoom == null) return;
+
+        treasureRoom.Populate(upgradePrefabs);
     }
 
     private void PopulateRoom(GameObject room)

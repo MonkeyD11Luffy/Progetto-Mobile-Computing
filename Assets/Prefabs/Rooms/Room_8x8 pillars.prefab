@@ -2577,6 +2577,7 @@ GameObject:
   - component: {fileID: 1943702891756042844}
   - component: {fileID: -383593427183616331}
   - component: {fileID: -3174653343604674961}
+  - component: {fileID: 3503217877071514138}
   m_Layer: 0
   m_Name: Room_8x8 pillars
   m_TagString: Untagged
@@ -2640,6 +2641,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoomNavGrid
   cellSize: 0.5
+  agentRadius: 0.7
+--- !u!114 &3503217877071514138
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7914607383602842789}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd0a33cdf0247faa982e4e2bde7194ba, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoomMusic
+  combatClip: {fileID: 8300000, guid: cd2a88a80aec0ac6d9911304972f73f0, type: 3}
+  clearedClip: {fileID: 8300000, guid: 47a917d45a34d3befa1a39d28f54492e, type: 3}
 --- !u!1 &8188574223271338845
 GameObject:
   m_ObjectHideFlags: 0

@@ -2915,6 +2915,7 @@ GameObject:
   - component: {fileID: 5603064141673900756}
   - component: {fileID: 270210584037734515}
   - component: {fileID: 5334282708629631384}
+  - component: {fileID: 3093391591423540540}
   m_Layer: 0
   m_Name: Boss_Room
   m_TagString: Untagged
@@ -2987,6 +2988,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoomNavGrid
   cellSize: 0.25
+  agentRadius: 0.7
+--- !u!114 &3093391591423540540
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6026497899338448986}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd0a33cdf0247faa982e4e2bde7194ba, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoomMusic
+  combatClip: {fileID: 8300000, guid: 9a4e00bf9e00229bd917807ee9821912, type: 3}
+  clearedClip: {fileID: 8300000, guid: 47a917d45a34d3befa1a39d28f54492e, type: 3}
 --- !u!1 &6030144856106897316
 GameObject:
   m_ObjectHideFlags: 0
