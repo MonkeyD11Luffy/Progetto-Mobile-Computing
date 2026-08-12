@@ -22,6 +22,12 @@ public class RoomManager : MonoBehaviour
     [SerializeField] private float placementStep = 0.5f;
     [SerializeField] private int maxPlacementAttempts = 12;
 
+    [Header("Crediti")]
+    [SerializeField] private GameObject creditPrefab;
+    // Raggio entro cui i crediti si sparpagliano attorno al punto di morte:
+    // cadendo tutti nello stesso punto sembrerebbero uno solo
+    [SerializeField] private float creditScatter = 0.35f;
+
     [Header("Potenziamenti Permanenti")]
     [SerializeField] private GameObject[] permanentUpgradePrefabs;
 
@@ -50,6 +56,10 @@ public class RoomManager : MonoBehaviour
     private bool roomCleared;
     private bool victoryShown;
     private float doorIgnoreTimer;
+
+    // La stanza attiva: serve a chi crea oggetti a runtime per appenderli lì
+    // invece che alla radice della scena, dove sopravvivrebbero al cambio stanza
+    public GameObject CurrentRoom => currentRoom;
 
     private void Awake()
     {
@@ -159,6 +169,22 @@ public class RoomManager : MonoBehaviour
         if (GameManager.Instance != null)
         {
             GameManager.Instance.ShowVictory();
+        }
+    }
+
+    // I crediti nascono figli della stanza corrente e non della radice della
+    // scena: ActivateOnly spegne le stanze che il player lascia, e appesi alla
+    // radice resterebbero visibili e raccoglibili da qualsiasi altra stanza.
+    public void SpawnCredits(Vector3 position, int amount)
+    {
+        if (creditPrefab == null || amount <= 0) return;
+
+        Transform parent = currentRoom != null ? currentRoom.transform : null;
+
+        for (int i = 0; i < amount; i++)
+        {
+            Vector2 offset = Random.insideUnitCircle * creditScatter;
+            Instantiate(creditPrefab, position + (Vector3)offset, Quaternion.identity, parent);
         }
     }
 
