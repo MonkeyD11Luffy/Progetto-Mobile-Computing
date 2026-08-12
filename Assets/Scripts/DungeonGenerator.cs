@@ -20,6 +20,7 @@ public class DungeonGenerator : MonoBehaviour
     [SerializeField] private GameObject minibossRoomPrefab;
     [SerializeField] private GameObject secretRoomPrefab;
     [SerializeField] private GameObject treasureRoomPrefab;
+    [SerializeField] private GameObject shopRoomPrefab;
     // Tinta del muro sfondabile: unico indizio che dietro c'è qualcosa
     [SerializeField] private Color secretWallTint = new Color(0.85f, 0.85f, 0.9f, 1f);
     [SerializeField] private int roomCount = 8;
@@ -94,15 +95,16 @@ public class DungeonGenerator : MonoBehaviour
 
         Vector2Int startCell = cells[0];
         Vector2Int bossCell = FarthestCell(cells, startCell);
+
+        // Entrare dal boss finisce la partita: tesoro e negozio devono restare
+        // di qua, altrimenti il player non li vedrebbe mai
+        HashSet<Vector2Int> reachable = CellsReachableWithoutBoss(cells, startCell, bossCell);
+
         Vector2Int? minibossCell = PickMinibossCell(cells, startCell, bossCell);
-        Vector2Int? treasureCell = PickTreasureCell(cells, startCell, bossCell, minibossCell);
+        Vector2Int? treasureCell = PickTreasureCell(cells, startCell, bossCell, minibossCell, reachable);
+        Vector2Int? shopCell = PickShopCell(cells, startCell, bossCell, minibossCell, treasureCell, reachable);
 
-        // TEMPORANEO: serve a controllare in playtest quanto minibossDistanceBias
-        // spinge il miniboss lontano dalla partenza.
-        Debug.Log($"Dungeon: distanza boss {Distance(startCell, bossCell)}, " +
-                  $"distanza miniboss {(minibossCell.HasValue ? Distance(startCell, minibossCell.Value).ToString() : "nessuna")}");
-
-        InstantiateRooms(cells, startCell, bossCell, minibossCell, treasureCell);
+        InstantiateRooms(cells, startCell, bossCell, minibossCell, treasureCell, shopCell);
 
         if (!rooms.ContainsKey(startCell) || !rooms.ContainsKey(bossCell)) return;
 
@@ -116,11 +118,12 @@ public class DungeonGenerator : MonoBehaviour
         roomManager.SetFinalRoom(rooms[bossCell]);
 
         PopulateTreasureRoom(treasureCell, roomManager.PermanentUpgradePrefabs);
+        PopulateShopRoom(shopCell, roomManager.PermanentUpgradePrefabs);
 
         // In coda alla generazione: la minimappa deve vedere le stanze già
         // create. Il RoomManager entrerà nella stanza iniziale in Start(),
         // colorandola come corrente.
-        if (minimap != null) minimap.Build(rooms, connections, startCell, bossCell, minibossCell, treasureCell);
+        if (minimap != null) minimap.Build(rooms, connections, startCell, bossCell, minibossCell, treasureCell, shopCell);
 
         VerifyConnectivity(startCell);
     }
@@ -142,6 +145,7 @@ public class DungeonGenerator : MonoBehaviour
         ValidateRoomPrefab(minibossRoomPrefab);
         ValidateRoomPrefab(secretRoomPrefab);
         ValidateRoomPrefab(treasureRoomPrefab);
+        ValidateRoomPrefab(shopRoomPrefab);
     }
 
     private static void ValidateRoomPrefab(GameObject prefab)
@@ -294,21 +298,72 @@ public class DungeonGenerator : MonoBehaviour
         return candidates[candidates.Count - 1];
     }
 
+    // Entrare nella stanza boss chiude la partita, quindi tutto quello che si
+    // raggiunge solo attraversandola non si visiterà mai: una stanza tesoro
+    // piazzata lì sarebbe irraggiungibile. Questa visita in ampiezza parte dalla
+    // partenza e tratta la cella boss come un muro — la vede ma non ci passa
+    // attraverso — e restituisce le celle che restano visitabili.
+    //
+    // L'adiacenza è quella della griglia e non connections, che a questo punto è
+    // ancora vuota: vale la stessa approssimazione del conteggio dei vicini in
+    // PickTreasureCell, cioè che i collegamenti veri sono un sottoinsieme di
+    // quelli possibili. Al più il risultato è ottimista, e un dungeon in cui non
+    // coincidono ha già una porta mancante che VerifyConnectivity segnala.
+    private static HashSet<Vector2Int> CellsReachableWithoutBoss(List<Vector2Int> cells, Vector2Int startCell, Vector2Int bossCell)
+    {
+        HashSet<Vector2Int> occupied = new HashSet<Vector2Int>(cells);
+        HashSet<Vector2Int> reached = new HashSet<Vector2Int>();
+
+        // Non è un caso reale (FarthestCell restituisce la partenza solo con una
+        // cella sola), ma senza questo la visita partirebbe da una cella vietata
+        if (startCell == bossCell || !occupied.Contains(startCell)) return reached;
+
+        reached.Add(startCell);
+
+        Queue<Vector2Int> frontier = new Queue<Vector2Int>();
+        frontier.Enqueue(startCell);
+
+        while (frontier.Count > 0)
+        {
+            Vector2Int cell = frontier.Dequeue();
+
+            foreach (DoorTrigger.Direction direction in AllDirections)
+            {
+                Vector2Int next = cell + OffsetOf(direction);
+
+                // Il boss si raggiunge ma non si attraversa: non entra in coda,
+                // quindi la visita non prosegue verso quello che ha dietro
+                if (next == bossCell) continue;
+
+                if (!occupied.Contains(next)) continue;
+                if (!reached.Add(next)) continue;
+
+                frontier.Enqueue(next);
+            }
+        }
+
+        return reached;
+    }
+
     // --- 2b. stanza tesoro ---------------------------------------------------
 
     // Il tesoro va in fondo a un ramo: si sorteggia fra i vicoli ciechi, cioè le
     // celle con un solo vicino occupato, così ci si arriva deviando dal percorso
     // principale invece di trovarselo per strada. Se non ce ne sono (dungeon a
-    // corridoio, o gli unici vicoli ciechi sono partenza, boss e miniboss) si
-    // ripiega su una cella qualsiasi: la stanza tesoro deve esserci sempre.
-    // Resta null solo se il prefab non è configurato o se il dungeon è fatto di
-    // sole celle riservate.
+    // corridoio, o gli unici vicoli ciechi sono partenza, boss e miniboss, o
+    // stanno tutti oltre il boss) si ripiega su una cella qualsiasi fra quelle
+    // raggiungibili: la stanza tesoro deve esserci sempre. Resta null solo se il
+    // prefab non è configurato o se il dungeon è fatto di sole celle riservate.
+    //
+    // reachable esclude quello che sta oltre la stanza boss, che chiude la
+    // partita: vale sia per i vicoli ciechi sia per il ripiego, altrimenti il
+    // ripiego rimetterebbe dentro proprio le celle appena escluse.
     //
     // Il conteggio dei vicini è sulla griglia e non su connections, che a questo
     // punto è ancora vuota: le porte vengono collegate più avanti. Una cella con
     // un solo vicino sulla griglia resta comunque un vicolo cieco, perché i
     // collegamenti veri sono un sottoinsieme di quelli possibili.
-    private Vector2Int? PickTreasureCell(List<Vector2Int> cells, Vector2Int startCell, Vector2Int bossCell, Vector2Int? minibossCell)
+    private Vector2Int? PickTreasureCell(List<Vector2Int> cells, Vector2Int startCell, Vector2Int bossCell, Vector2Int? minibossCell, HashSet<Vector2Int> reachable)
     {
         if (treasureRoomPrefab == null) return null;
 
@@ -321,6 +376,7 @@ public class DungeonGenerator : MonoBehaviour
         {
             if (cell == startCell || cell == bossCell) continue;
             if (minibossCell.HasValue && cell == minibossCell.Value) continue;
+            if (!reachable.Contains(cell)) continue; // oltre il boss: irraggiungibile
 
             if (CountOccupiedNeighbours(occupied, cell) == 1) deadEnds.Add(cell);
             else fallback.Add(cell);
@@ -333,13 +389,43 @@ public class DungeonGenerator : MonoBehaviour
         return candidates[Random.Range(0, candidates.Count)];
     }
 
+    // --- 2c. stanza negozio --------------------------------------------------
+
+    // Al contrario del tesoro il negozio non va in fondo a un ramo: ci si torna
+    // più volte, man mano che i crediti si accumulano, quindi conviene che
+    // capiti sulla strada. Si sorteggia fra tutte le celle libere, vicoli
+    // ciechi compresi, escluse quelle oltre la stanza boss: un negozio là dietro
+    // non si potrebbe spendere. Resta null se il prefab non è configurato o se
+    // il dungeon è fatto di sole celle già riservate: in quel caso si esce senza
+    // negozio, che è una stanza in più e non un pezzo obbligatorio.
+    private Vector2Int? PickShopCell(List<Vector2Int> cells, Vector2Int startCell, Vector2Int bossCell, Vector2Int? minibossCell, Vector2Int? treasureCell, HashSet<Vector2Int> reachable)
+    {
+        if (shopRoomPrefab == null) return null;
+
+        List<Vector2Int> candidates = new List<Vector2Int>();
+
+        foreach (Vector2Int cell in cells)
+        {
+            if (cell == startCell || cell == bossCell) continue;
+            if (minibossCell.HasValue && cell == minibossCell.Value) continue;
+            if (treasureCell.HasValue && cell == treasureCell.Value) continue;
+            if (!reachable.Contains(cell)) continue; // oltre il boss: irraggiungibile
+
+            candidates.Add(cell);
+        }
+
+        if (candidates.Count == 0) return null;
+
+        return candidates[Random.Range(0, candidates.Count)];
+    }
+
     // --- 3. istanziamento ----------------------------------------------------
 
-    private void InstantiateRooms(List<Vector2Int> cells, Vector2Int startCell, Vector2Int bossCell, Vector2Int? minibossCell, Vector2Int? treasureCell)
+    private void InstantiateRooms(List<Vector2Int> cells, Vector2Int startCell, Vector2Int bossCell, Vector2Int? minibossCell, Vector2Int? treasureCell, Vector2Int? shopCell)
     {
         foreach (Vector2Int cell in cells)
         {
-            GameObject prefab = PickRoomPrefab(cell, startCell, bossCell, minibossCell, treasureCell);
+            GameObject prefab = PickRoomPrefab(cell, startCell, bossCell, minibossCell, treasureCell, shopCell);
             if (prefab == null) continue;
 
             rooms.Add(cell, CreateRoom(prefab));
@@ -358,11 +444,12 @@ public class DungeonGenerator : MonoBehaviour
         return room;
     }
 
-    private GameObject PickRoomPrefab(Vector2Int cell, Vector2Int startCell, Vector2Int bossCell, Vector2Int? minibossCell, Vector2Int? treasureCell)
+    private GameObject PickRoomPrefab(Vector2Int cell, Vector2Int startCell, Vector2Int bossCell, Vector2Int? minibossCell, Vector2Int? treasureCell, Vector2Int? shopCell)
     {
         if (cell == bossCell && bossRoomPrefab != null) return bossRoomPrefab;
         if (minibossCell.HasValue && cell == minibossCell.Value) return minibossRoomPrefab;
         if (treasureCell.HasValue && cell == treasureCell.Value) return treasureRoomPrefab;
+        if (shopCell.HasValue && cell == shopCell.Value) return shopRoomPrefab;
         if (cell == startCell) return roomPrefabs[0];
 
         return roomPrefabs[Random.Range(0, roomPrefabs.Length)];
@@ -627,6 +714,20 @@ public class DungeonGenerator : MonoBehaviour
         if (treasureRoom == null) return;
 
         treasureRoom.Populate(upgradePrefabs);
+    }
+
+    // La merce del negozio, con la stessa lista di potenziamenti della stanza
+    // tesoro: lì se ne regala uno, qui si vendono. Come sopra, se manca la
+    // cella o il componente non succede niente.
+    private void PopulateShopRoom(Vector2Int? shopCell, GameObject[] upgradePrefabs)
+    {
+        if (!shopCell.HasValue) return;
+        if (!rooms.TryGetValue(shopCell.Value, out GameObject room)) return;
+
+        ShopRoom shopRoom = room.GetComponent<ShopRoom>();
+        if (shopRoom == null) return;
+
+        shopRoom.Populate(upgradePrefabs);
     }
 
     private void PopulateRoom(GameObject room)

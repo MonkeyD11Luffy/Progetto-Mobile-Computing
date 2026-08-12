@@ -49,6 +49,7 @@ public class PlayerController : MonoBehaviour
     [Header("UI")]
     [SerializeField] private TextMeshProUGUI healthText;
     [SerializeField] private TextMeshProUGUI bombText;
+    [SerializeField] private TextMeshProUGUI creditText;
     [SerializeField] private TextMeshProUGUI weaponText;
     [SerializeField] private TextMeshProUGUI upgradePopupText;
     [SerializeField] private float upgradePopupDuration = 1.5f;
@@ -68,6 +69,7 @@ public class PlayerController : MonoBehaviour
     private float fireTimer;
     private int currentHealth;
     private int currentBombs;
+    private int currentCredits;
     private float bombTimer;
     private bool isInvulnerable;
     private bool isDead;
@@ -89,6 +91,7 @@ public class PlayerController : MonoBehaviour
         UpdateBombUI();
         UpdateWeaponUI();
         UpdateHealthUI();
+        UpdateCreditUI();
     }
 
     private void Update()
@@ -316,7 +319,13 @@ public class PlayerController : MonoBehaviour
     {
         if (bombPrefab == null) return;
 
-        Instantiate(bombPrefab, transform.position, Quaternion.identity);
+        // Figlia della stanza corrente: appesa alla radice della scena
+        // continuerebbe a esplodere anche dopo essere passati di là
+        Transform parent = RoomManager.Instance != null && RoomManager.Instance.CurrentRoom != null
+            ? RoomManager.Instance.CurrentRoom.transform
+            : null;
+
+        Instantiate(bombPrefab, transform.position, Quaternion.identity, parent);
         currentBombs--;
         UpdateBombUI();
     }
@@ -416,6 +425,14 @@ public class PlayerController : MonoBehaviour
     }
 }
 
+    private void UpdateCreditUI()
+    {
+        if (creditText != null)
+        {
+            creditText.text = $"Crediti: {currentCredits}";
+        }
+    }
+
     private void UpdateWeaponUI()
 {
     if (weaponText == null) return;
@@ -457,6 +474,28 @@ public class PlayerController : MonoBehaviour
     public void DecreaseFireCooldown(float amount)
     {
         fireCooldown = Mathf.Max(0.05f, fireCooldown - amount);
+    }
+
+    public int Credits => currentCredits;
+
+    public void AddCredits(int amount)
+    {
+        if (amount <= 0) return;
+
+        currentCredits += amount;
+        UpdateCreditUI();
+    }
+
+    // false se non bastano, e in quel caso non toglie niente: sta al chiamante
+    // (un negozio, una porta a pagamento) decidere cosa fare del rifiuto
+    public bool SpendCredits(int amount)
+    {
+        if (amount <= 0) return true; // gratis: niente da pagare
+        if (currentCredits < amount) return false;
+
+        currentCredits -= amount;
+        UpdateCreditUI();
+        return true;
     }
 
     public void AddBomb(int amount)

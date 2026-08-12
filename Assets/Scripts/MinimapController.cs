@@ -27,8 +27,9 @@ public class MinimapController : MonoBehaviour
     [SerializeField] private Color bossColor = new Color(0.9f, 0.2f, 0.2f, 1f);
     [SerializeField] private Color minibossColor = new Color(0.9f, 0.5f, 0.15f, 1f);
     [SerializeField] private Color treasureColor = new Color(0.95f, 0.85f, 0.3f, 1f);
-    // Quanto boss e miniboss intravisti ma non ancora visitati si mescolano
-    // verso adjacentColor: 0 li lascia pieni, 1 li rende celle adiacenti qualsiasi
+    [SerializeField] private Color shopColor = new Color(0.3f, 0.8f, 0.9f, 1f);
+    // Quanto le stanze speciali intraviste ma non ancora visitate si mescolano
+    // verso adjacentColor: 0 le lascia piene, 1 le rende celle adiacenti qualsiasi
     [SerializeField] [Range(0f, 1f)] private float unvisitedTint = 0.5f;
 
     private readonly Dictionary<Vector2Int, Image> cells = new Dictionary<Vector2Int, Image>();
@@ -42,6 +43,7 @@ public class MinimapController : MonoBehaviour
     private Vector2Int bossCell;
     private Vector2Int? minibossCell;
     private Vector2Int? treasureCell;
+    private Vector2Int? shopCell;
 
     private Vector2Int currentCell;
     private bool hasCurrentCell;
@@ -60,7 +62,7 @@ public class MinimapController : MonoBehaviour
 
     // La stanza segreta non ha una cella nella griglia, quindi non arriva qui
     // e non compare sulla minimappa.
-    public void Build(Dictionary<Vector2Int, GameObject> rooms, Dictionary<Vector2Int, HashSet<Vector2Int>> roomConnections, Vector2Int startCell, Vector2Int bossRoomCell, Vector2Int? minibossRoomCell, Vector2Int? treasureRoomCell)
+    public void Build(Dictionary<Vector2Int, GameObject> rooms, Dictionary<Vector2Int, HashSet<Vector2Int>> roomConnections, Vector2Int startCell, Vector2Int bossRoomCell, Vector2Int? minibossRoomCell, Vector2Int? treasureRoomCell, Vector2Int? shopRoomCell)
     {
         if (minimapPanel == null || cellPrefab == null || rooms == null) return;
 
@@ -68,6 +70,7 @@ public class MinimapController : MonoBehaviour
         bossCell = bossRoomCell;
         minibossCell = minibossRoomCell;
         treasureCell = treasureRoomCell;
+        shopCell = shopRoomCell;
 
         cells.Clear();
         cellByRoom.Clear();
@@ -189,8 +192,8 @@ public class MinimapController : MonoBehaviour
         return SpecialColorOf(cell, visitedColor);
     }
 
-    // Boss e miniboss si riconoscono anche prima di entrarci, ma smorzati verso
-    // il grigio delle adiacenti: devono restare leggibili come "non visitate".
+    // Le stanze speciali si riconoscono anche prima di entrarci, ma smorzate
+    // verso il grigio delle adiacenti: devono restare leggibili come "non visitate".
     // Su una cella normale il Lerp è l'identità, adjacentColor verso se stesso.
     private Color ColorOfAdjacent(Vector2Int cell)
     {
@@ -202,6 +205,7 @@ public class MinimapController : MonoBehaviour
         if (cell == bossCell) return bossColor;
         if (minibossCell.HasValue && cell == minibossCell.Value) return minibossColor;
         if (treasureCell.HasValue && cell == treasureCell.Value) return treasureColor;
+        if (shopCell.HasValue && cell == shopCell.Value) return shopColor;
 
         return fallback;
     }

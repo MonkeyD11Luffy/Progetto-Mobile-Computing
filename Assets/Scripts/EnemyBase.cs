@@ -12,6 +12,11 @@ public abstract class EnemyBase : MonoBehaviour
     [Header("Danno da contatto")]
     [SerializeField] protected int contactDamage = 1; // 0 = non fa danno toccando il player
 
+    [Header("Crediti")]
+    [SerializeField] protected int creditDrop = 1; // 0 = non lascia crediti
+    // Probabilità che il drop avvenga: 1 = sempre, 0 = mai
+    [SerializeField] [Range(0f, 1f)] protected float creditDropChance = 0.5f;
+
     [Header("Feedback")]
     [SerializeField] private float hitFlashDuration = 0.08f;
     [SerializeField] private float deathEffectDuration = 0.2f;
@@ -158,6 +163,13 @@ public abstract class EnemyBase : MonoBehaviour
         if (RoomManager.Instance != null)
         {
             RoomManager.Instance.RegisterEnemyDeath();
+
+            // I crediti cadono dove il nemico è morto: li fa nascere il
+            // RoomManager, che sa in quale stanza appenderli
+            if (creditDrop > 0 && Random.value <= creditDropChance)
+            {
+                RoomManager.Instance.SpawnCredits(transform.position, creditDrop);
+            }
         }
 
         if (AudioManager.Instance != null)
@@ -314,9 +326,6 @@ public abstract class EnemyBase : MonoBehaviour
         // Con speed 0 expected è 0 e non scatta mai: un nemico fermo per scelta
         // (Boss in telegrafo) non è un nemico bloccato.
         if (travelled >= expected * stuckProgressFraction) return;
-
-        // TEMPORANEO: serve a vedere in Console se il meccanismo parte davvero
-        Debug.Log($"Stallo: {name} ha percorso {travelled:F3} invece di {expected:F3} in {stuckTimeout}s, forzo il pathfinding", this);
 
         pathTimer = 0f;            // ricalcolo al prossimo UpdatePath
         ignoreLineOfSight = true;  // consumato da UpdatePath, se trova un percorso

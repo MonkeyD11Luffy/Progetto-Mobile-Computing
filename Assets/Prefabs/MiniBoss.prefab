@@ -331,10 +331,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f9106924ffb66512eba8e303c52d0369, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MiniBossController
-  maxHealth: 15
+  maxHealth: 25
   contactDamage: 2
+  creditDrop: 5
+  creditDropChance: 1
   hitFlashDuration: 0.08
   deathEffectDuration: 0.2
+  obstacleCheckDistance: 1
+  avoidanceStrength: 1
+  pathRecalculateInterval: 0.3
+  waypointReachedDistance: 0.15
+  stuckTimeout: 0.5
+  stuckProgressFraction: 0.25
   moveSpeed: 1.5
   moveDuration: 1.5
   telegraphDuration: 0.4
