@@ -5,6 +5,12 @@ public class RoomManager : MonoBehaviour
 {
     public static RoomManager Instance;
 
+    // Avvisa chi deve reagire a un cambio stanza senza che RoomManager debba
+    // conoscerlo: un evento invece di una chiamata diretta perché la stanza non
+    // ha motivo di sapere che esistono le abilità del player. Statico perché
+    // RoomManager nasce insieme al dungeon, dopo gli oggetti che si iscrivono.
+    public static event System.Action<GameObject> RoomEntered;
+
     [Header("Stanze")]
     [SerializeField] private GameObject startingRoom;
 
@@ -127,6 +133,9 @@ public class RoomManager : MonoBehaviour
         if (roomCleared) CheckVictory();
 
         if (minimap != null) minimap.SetCurrentRoom(room);
+
+        // Per ultimo: chi ascolta trova currentRoom già aggiornato
+        RoomEntered?.Invoke(room);
     }
 
     public void RegisterEnemyDeath()

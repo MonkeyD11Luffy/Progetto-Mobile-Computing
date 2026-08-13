@@ -66,6 +66,11 @@ public class PlayerController : MonoBehaviour
     private Rigidbody2D rb;
     private Vector2 moveInput;
     private Vector2 lastAimDirection = Vector2.right;
+    // Ultima direzione di movimento, che resta anche a player fermo: lo scatto
+    // parte da qui, e lastAimDirection non servirebbe perché cambia solo
+    // sparando. In giù come le altre pose iniziali: è il verso in cui il player
+    // guarda appena nato, quindi anche uno scatto senza storia va dove sembra.
+    private Vector2 lastMoveDirection = Vector2.down;
     private float fireTimer;
     private int currentHealth;
     private int currentBombs;
@@ -78,6 +83,12 @@ public class PlayerController : MonoBehaviour
     private Color baseSpriteColor;
     private Coroutine flashCoroutine;
     private Coroutine upgradePopupCoroutine;
+
+    // Stato comandato da PlayerAbilities
+    private bool hasMovementOverride;
+    private Vector2 movementOverride;
+    private int abilityImmunitySources;
+    private float abilitySpeedBonus;
 
     private void Awake()
     {
@@ -125,7 +136,56 @@ public class PlayerController : MonoBehaviour
 
     private void FixedUpdate()
     {
-        rb.linearVelocity = moveInput * moveSpeed;
+        // Durante uno scatto il movimento normale è scavalcato: senza, questa
+        // riga riscriverebbe la velocità dello scatto a ogni passo di fisica, e
+        // chi vince dipenderebbe dall'ordine di esecuzione degli script
+        rb.linearVelocity = hasMovementOverride ? movementOverride : moveInput * moveSpeed;
+    }
+
+    // --- comandi delle abilità (PlayerAbilities) -----------------------------
+
+    // Movimento imposto dall'esterno, usato dallo scatto. Finché è attivo il
+    // player non risponde a WASD: la velocità la decide chi ha chiamato.
+    public void SetMovementOverride(Vector2 velocity)
+    {
+        movementOverride = velocity;
+        hasMovementOverride = true;
+    }
+
+    public void ClearMovementOverride()
+    {
+        hasMovementOverride = false;
+        movementOverride = Vector2.zero;
+    }
+
+    // Immunità concessa da un'abilità (scudo, scatto), tenuta separata da
+    // isInvulnerable, che è quella dopo un colpo e si porta dietro lampeggio e
+    // timer. È un contatore e non un bool perché scatto e scudo possono
+    // sovrapporsi: con un bool, la fine del primo spegnerebbe anche il secondo.
+    public void SetAbilityImmunity(bool active)
+    {
+        abilityImmunitySources = Mathf.Max(0, abilityImmunitySources + (active ? 1 : -1));
+    }
+
+    public bool IsImmune => abilityImmunitySources > 0;
+
+    // Moltiplicatore di velocità a comando, per compensare il rallentamento del
+    // tempo. Diverso da ApplySpeedBoost, che se lo toglie da solo dopo una
+    // durata: qui la fine la decide l'abilità.
+    public void SetAbilitySpeedMultiplier(float multiplier)
+    {
+        // Il bonus precedente si toglie prima: due chiamate di fila non devono
+        // sommarsi, e nel frattempo moveSpeed può essere cambiato da un pickup
+        ClearAbilitySpeedMultiplier();
+
+        abilitySpeedBonus = moveSpeed * (multiplier - 1f);
+        moveSpeed += abilitySpeedBonus;
+    }
+
+    public void ClearAbilitySpeedMultiplier()
+    {
+        moveSpeed -= abilitySpeedBonus;
+        abilitySpeedBonus = 0f;
     }
 
     private void HandleInput()
@@ -139,6 +199,10 @@ public class PlayerController : MonoBehaviour
         if (Input.GetKey(KeyCode.S)) y = -1f;
 
         moveInput = new Vector2(x, y).normalized;
+
+        // Solo quando ci si muove davvero: al rilascio dei tasti moveInput torna
+        // a zero, e sovrascriverla lì cancellerebbe proprio il ricordo che serve
+        if (moveInput != Vector2.zero) lastMoveDirection = moveInput;
     }
 
     private void HandleWeaponSwitch()
@@ -360,7 +424,9 @@ public class PlayerController : MonoBehaviour
 
     public void TakeDamage(int amount)
 {
-    if (isInvulnerable || isDead) return;
+    // IsImmune è lo scudo (o lo scatto): assorbe tutto senza lampeggio e senza
+    // consumare i frame di invulnerabilità post-colpo
+    if (isInvulnerable || isDead || IsImmune) return;
 
     currentHealth -= amount;
     UpdateHealthUI();
@@ -562,5 +628,10 @@ public class PlayerController : MonoBehaviour
     public Vector2 MoveInput => moveInput;
     public Vector2 AimInput => GetCardinalAimDirection();
     public Vector2 LastAimDirection => lastAimDirection;
+    // La usa PlayerAbilities per lo scatto da fermo
+    public Vector2 LastMoveDirection => lastMoveDirection;
     public int CurrentWeaponIndex => (int)currentWeapon;
+
+    // La usa PlayerAbilities per la stessa guardia che c'è in cima a Update()
+    public bool IsDead => isDead;
 }

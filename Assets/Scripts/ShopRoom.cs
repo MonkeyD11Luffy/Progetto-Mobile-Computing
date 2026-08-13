@@ -3,10 +3,12 @@ using TMPro;
 using UnityEngine;
 
 // Da mettere sulla radice del template della stanza negozio. Gli slot sono i
-// posti sul bancone: i primi due tengono la merce di consumo, gli altri i
-// potenziamenti permanenti, sempre diversi fra loro. A differenza della stanza
-// tesoro qui si può comprare tutto, basta avere i crediti: è ShopItem, aggiunto
-// a ogni pezzo di merce, a tenere spento il pickup finché non è pagato.
+// posti sul bancone: il primo tiene la merce di consumo, gli ultimi due le
+// abilità, quelli in mezzo i potenziamenti permanenti, sempre diversi fra loro.
+// Con quattro slot il bancone è quindi un consumabile, un potenziamento e due
+// abilità. A differenza della stanza tesoro qui si può comprare tutto, basta
+// avere i crediti: è ShopItem, aggiunto a ogni pezzo di merce, a incassare il
+// prezzo e a farsi consegnare quello che l'oggetto contiene.
 public class ShopRoom : MonoBehaviour
 {
     [SerializeField] private Transform[] slots;
@@ -14,14 +16,25 @@ public class ShopRoom : MonoBehaviour
     [SerializeField] private int consumablePrice = 3;
     [SerializeField] private int upgradePrice = 8;
 
+    [Header("Abilità in vendita")]
+    [SerializeField] private int abilityPrice = 15;
+    // Prefab con il solo SpriteRenderer e un collider trigger: è merce senza
+    // effetto proprio, lo sprite e l'abilità li scrive questo script
+    [SerializeField] private GameObject abilityPickupPrefab;
+    // Indicizzato da (int)PlayerAbilities.AbilityType, cioè nell'ordine
+    // dell'enum: Scatto, Onda d'urto, Rallenta Tempo, Scudo
+    [SerializeField] private Sprite[] abilitySprites;
+
     [Header("Cartellino del prezzo")]
     // Il cartellino con dentro un TextMeshProUGUI: l'aspetto è tutto suo, qui
     // ci si limita a scriverci il numero
     [SerializeField] private GameObject priceLabelPrefab;
 
-    // I primi slot vanno alla merce di consumo, tutti gli altri ai
+    // Il bancone si legge da fuori verso dentro: i primi slot alla merce di
+    // consumo, gli ultimi alle abilità, quelli che restano in mezzo ai
     // potenziamenti permanenti
-    private const int ConsumableSlots = 2;
+    private const int ConsumableSlots = 1;
+    private const int AbilitySlots = 2;
 
     // Il cartellino sta sopra la merce, in coordinate locali dell'oggetto
     private static readonly Vector3 PriceLabelPosition = new Vector3(0f, 0.6f, 0f);
@@ -36,6 +49,11 @@ public class ShopRoom : MonoBehaviour
         // Copia mescolata dei potenziamenti: si pescano in ordine, così due
         // slot non offrono mai lo stesso potenziamento
         List<GameObject> upgradePool = Shuffled(upgradePrefabs);
+
+        // Le abilità che il player non ha ancora, lette una volta sola: gli slot
+        // ci pescano dentro togliendo quello che vendono, così i due posti del
+        // bancone non offrono mai la stessa abilità
+        List<PlayerAbilities.AbilityType> abilityPool = AvailableAbilities();
 
         int nextUpgrade = 0;
 
@@ -55,6 +73,11 @@ public class ShopRoom : MonoBehaviour
                 continue;
             }
 
+            // Gli ultimi posti del bancone sono quelli delle abilità. Se non
+            // c'è niente da vendere — prefab non configurato, o il player ne
+            // possiede già abbastanza — tornano slot come gli altri.
+            if (IsAbilitySlot(i) && TryPlaceAbility(slot, abilityPool)) continue;
+
             // Finiti i potenziamenti disponibili lo slot resta vuoto: meglio un
             // bancone spoglio che vendere due volte la stessa cosa
             if (nextUpgrade >= upgradePool.Count) continue;
@@ -62,6 +85,105 @@ public class ShopRoom : MonoBehaviour
             PlaceItem(upgradePool[nextUpgrade], slot, upgradePrice);
             nextUpgrade++;
         }
+    }
+
+    // --- abilità -------------------------------------------------------------
+
+    // I posti in fondo al bancone, ma senza mai rubare quelli della merce di
+    // consumo: con un bancone corto le abilità sono le prime a cedere il posto.
+    private bool IsAbilitySlot(int index)
+    {
+        return index >= ConsumableSlots && index >= slots.Length - AbilitySlots;
+    }
+
+    // Vera se lo slot è stato riempito con un'abilità. Falsa quando non c'è
+    // niente da vendere, e allora il chiamante ci rimette un potenziamento.
+    private bool TryPlaceAbility(Transform slot, List<PlayerAbilities.AbilityType> pool)
+    {
+        if (abilityPickupPrefab == null) return false;
+
+        if (pool == null || pool.Count == 0) return false;
+
+        // Tolta dalla lista: l'altro slot delle abilità pesca da quel che resta
+        int pick = Random.Range(0, pool.Count);
+        PlayerAbilities.AbilityType ability = pool[pick];
+        pool.RemoveAt(pick);
+
+        GameObject item = Instantiate(abilityPickupPrefab, slot.position, Quaternion.identity, slot);
+
+        // Prima lo ShopAbility e poi lo ShopItem: quest'ultimo cerca in Awake
+        // chi consegna la merce, e a quel punto deve trovarlo già lì
+        ShopAbility shopAbility = item.GetComponent<ShopAbility>();
+        if (shopAbility == null) shopAbility = item.AddComponent<ShopAbility>();
+
+        shopAbility.Setup(ability);
+
+        ApplyAbilitySprite(item, ability);
+
+        TMP_Text label = CreatePriceLabel(item.transform, abilityPrice);
+
+        ShopItem shopItem = item.GetComponent<ShopItem>();
+        if (shopItem == null) shopItem = item.AddComponent<ShopItem>();
+
+        shopItem.Setup(abilityPrice, label);
+
+        return true;
+    }
+
+    // Le abilità che il player non ha ancora: il negozio non deve vendere due
+    // volte la stessa cosa, e un'abilità già posseduta costerebbe cara per non
+    // fare niente. Con tre già sbloccate ne resta una sola in vendita, con tutte
+    // e quattro la lista è vuota e i due slot passano ai potenziamenti.
+    private static List<PlayerAbilities.AbilityType> AvailableAbilities()
+    {
+        PlayerAbilities abilities = FindPlayerAbilities();
+
+        List<PlayerAbilities.AbilityType> available = new List<PlayerAbilities.AbilityType>();
+
+        foreach (PlayerAbilities.AbilityType type in PlayerAbilities.AllAbilities)
+        {
+            // Senza PlayerAbilities in scena non si sa cosa il player possieda:
+            // si mettono in vendita tutte, e sarà l'acquisto ad accorgersene
+            if (abilities != null && abilities.IsUnlocked(type)) continue;
+
+            available.Add(type);
+        }
+
+        return available;
+    }
+
+    // Per tag, come fanno EnemyBase e RoomManager: il negozio nasce a runtime da
+    // un prefab, e un prefab non può tenere un riferimento a un oggetto di scena.
+    private static PlayerAbilities FindPlayerAbilities()
+    {
+        GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
+
+        return playerObject != null ? playerObject.GetComponent<PlayerAbilities>() : null;
+    }
+
+    private void ApplyAbilitySprite(GameObject item, PlayerAbilities.AbilityType ability)
+    {
+        int index = (int)ability;
+
+        if (abilitySprites == null || index >= abilitySprites.Length || abilitySprites[index] == null)
+        {
+            Debug.LogWarning($"Nessuno sprite configurato per l'abilità {ability}: " +
+                             "l'oggetto in vendita resterebbe invisibile sul bancone.", this);
+            return;
+        }
+
+        // true: la merce nasce dentro alla stanza disattivata, quindi come per
+        // il cartellino senza questo il renderer non si troverebbe
+        SpriteRenderer renderer = item.GetComponentInChildren<SpriteRenderer>(true);
+
+        if (renderer == null)
+        {
+            Debug.LogWarning($"Il prefab '{abilityPickupPrefab.name}' non ha nessuno SpriteRenderer: " +
+                             "l'abilità in vendita non si vedrebbe.", abilityPickupPrefab);
+            return;
+        }
+
+        renderer.sprite = abilitySprites[index];
     }
 
     // Crea la merce sullo slot con il suo cartellino e la rende acquistabile.

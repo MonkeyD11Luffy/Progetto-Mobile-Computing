@@ -16,6 +16,12 @@ public class GameManager : MonoBehaviour
     // sotto il pannello.
     private bool isGameOver;
 
+    // Le legge chi altera Time.timeScale per conto suo (PlayerAbilities con
+    // Rallenta Tempo): quando il gioco è fermo il timeScale appartiene a questo
+    // script, e nessun altro deve rimetterlo a 1.
+    public bool IsPaused => isPaused;
+    public bool IsGameOver => isGameOver;
+
     private void Awake()
     {
         Instance = this;

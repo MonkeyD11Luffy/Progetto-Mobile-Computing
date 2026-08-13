@@ -32,6 +32,12 @@ public class DungeonGenerator : MonoBehaviour
     [SerializeField] private int minEnemiesPerRoom = 1;
     [SerializeField] private int maxEnemiesPerRoom = 4;
 
+    // Distanza minima fra un nemico e le porte collegate della sua stanza:
+    // entrando, il player si trova addosso chi era piazzato lì e prende danno
+    // da contatto prima di poter reagire. Vale solo per le porte collegate,
+    // perché le altre a questo punto sono già state distrutte.
+    [SerializeField] private float spawnDoorClearance = 2.5f;
+
     // Esponente applicato alla distanza dalla partenza quando si sorteggia la
     // stanza del miniboss: 0 = tutte le celle equiprobabili, valori più alti
     // la spingono sempre più verso il fondo del dungeon.
@@ -48,6 +54,10 @@ public class DungeonGenerator : MonoBehaviour
     // I figli di una stanza con questo prefisso nel nome sono i punti
     // in cui possono comparire i nemici.
     private const string SpawnPointPrefix = "Spawn_";
+
+    // Di quanto si scosta un nemico dal segnaposto quando lo divide con un
+    // altro. Non è tarabile: è solo lo spazio per non farli nascere sovrapposti.
+    private const float SpawnReuseScatter = 0.4f;
 
     private const string WallTag = "Wall";
 
@@ -737,21 +747,71 @@ public class DungeonGenerator : MonoBehaviour
 
         if (spawnPoints.Count == 0) return;
 
+        // Scartati i segnaposto a ridosso delle porte. Se non ne resta nessuno
+        // si tengono tutti: un template con i soli segnaposto vicino alle porte
+        // è un problema del template, ma lasciare la stanza vuota vorrebbe dire
+        // porte che si aprono da sole e nemici che non compaiono mai.
+        List<Transform> usable = SpawnPointsAwayFromDoors(room, spawnPoints);
+        if (usable.Count == 0) usable = spawnPoints;
+
         int min = Mathf.Max(0, minEnemiesPerRoom);
         int max = Mathf.Max(min, maxEnemiesPerRoom);
-        int amount = Mathf.Min(Random.Range(min, max + 1), spawnPoints.Count);
+        int amount = Random.Range(min, max + 1);
 
-        // Mescolati una volta sola e poi presi in ordine: ogni segnaposto viene
-        // usato al massimo da un nemico, così non si sovrappongono.
-        Shuffle(spawnPoints);
+        // Mescolati una volta sola e poi presi in ordine: finché i segnaposto
+        // bastano ognuno prende un nemico solo, così non si sovrappongono.
+        Shuffle(usable);
 
         for (int i = 0; i < amount; i++)
         {
             GameObject prefab = enemyPrefabs[Random.Range(0, enemyPrefabs.Length)];
             if (prefab == null) continue;
 
-            Instantiate(prefab, spawnPoints[i].position, Quaternion.identity, room.transform);
+            Transform spawnPoint = usable[i % usable.Count];
+
+            // Il giro dopo il primo si ricomincia dai segnaposto già usati: lo
+            // scarto evita che i due nemici nascano uno dentro l'altro, e resta
+            // piccolo per non riportarli verso la porta da cui li teniamo
+            // lontani.
+            Vector3 offset = i < usable.Count
+                ? Vector3.zero
+                : (Vector3)(Random.insideUnitCircle * SpawnReuseScatter);
+
+            Instantiate(prefab, spawnPoint.position + offset, Quaternion.identity, room.transform);
         }
+    }
+
+    // I segnaposto abbastanza lontani da ogni porta collegata della stanza.
+    private List<Transform> SpawnPointsAwayFromDoors(GameObject room, List<Transform> spawnPoints)
+    {
+        List<Transform> usable = new List<Transform>();
+
+        // Girano già tutte collegate, perché RemoveUnconnectedDoors passa prima
+        // di qui: IsConnected è una garanzia in più, non una selezione
+        DoorTrigger[] doors = room.GetComponentsInChildren<DoorTrigger>(true);
+
+        foreach (Transform spawnPoint in spawnPoints)
+        {
+            if (IsClearOfDoors(spawnPoint.position, doors)) usable.Add(spawnPoint);
+        }
+
+        return usable;
+    }
+
+    private bool IsClearOfDoors(Vector3 position, DoorTrigger[] doors)
+    {
+        foreach (DoorTrigger door in doors)
+        {
+            if (door == null || !door.IsConnected) continue;
+
+            // In due dimensioni: la Z dei segnaposto non è detta essere quella
+            // delle porte, e una differenza lì non è una distanza vera
+            float distance = Vector2.Distance(position, door.transform.position);
+
+            if (distance < spawnDoorClearance) return false;
+        }
+
+        return true;
     }
 
     // Fisher-Yates

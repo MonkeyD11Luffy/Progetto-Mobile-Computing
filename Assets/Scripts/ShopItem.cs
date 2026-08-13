@@ -1,11 +1,14 @@
 using TMPro;
 using UnityEngine;
 
-// Da mettere sull'oggetto in vendita, insieme al suo PickupController: finché
-// non è pagato il pickup è marcato come merce (IsForSale) e camminarci sopra non
-// fa niente. Pagando è questo script a chiamare ApplyEffect sul pickup, che sa
-// cosa fare: il negozio non deve sapere cosa vende.
-[RequireComponent(typeof(PickupController))]
+// Da mettere sull'oggetto in vendita, insieme a chi sa cosa quell'oggetto
+// consegna: un PickupController (consumabili e potenziamenti) oppure uno
+// ShopAbility (abilità). Finché non è pagato il pickup è marcato come merce
+// (IsForSale) e camminarci sopra non fa niente; pagando è questo script a
+// chiedere la consegna. Il negozio non deve sapere cosa vende.
+//
+// Niente RequireComponent sul PickupController: la merce può essere un'abilità,
+// e in quel caso Unity ne aggiungerebbe uno di troppo, con un effetto suo.
 public class ShopItem : MonoBehaviour
 {
     [SerializeField] private int price = 5;
@@ -15,6 +18,7 @@ public class ShopItem : MonoBehaviour
     [SerializeField] private TMP_Text priceLabel;
 
     private PickupController pickup;
+    private ShopAbility ability;
     private bool purchased;
 
     public int Price => price;
@@ -32,6 +36,7 @@ public class ShopItem : MonoBehaviour
     private void Awake()
     {
         pickup = GetComponent<PickupController>();
+        ability = GetComponent<ShopAbility>();
 
         // Ridondante per la merce creata da ShopRoom, che la marca già alla
         // nascita: serve a chi mette questo script a mano su un pickup dentro
@@ -59,16 +64,35 @@ public class ShopItem : MonoBehaviour
 
         purchased = true;
 
-        // L'effetto lo applica il pickup, l'unico a sapere cosa fa questo
-        // oggetto. Chiamarlo direttamente evita di dover far rigenerare il
-        // contatto: il player è già dentro al trigger, e un OnTriggerEnter2D
-        // non arriverebbe finché non esce e rientra.
-        if (pickup != null) pickup.ApplyEffect(player);
+        Deliver(player);
 
         // Il cartellino è figlio della merce e se ne andrebbe con lei, ma uno
         // ShopItem configurato a mano potrebbe averlo appeso altrove
         if (priceLabel != null) Destroy(priceLabel.gameObject);
 
         Destroy(gameObject);
+    }
+
+    // La consegna la fa chi sa cosa c'è dentro l'oggetto. Chiamarlo direttamente
+    // evita di dover far rigenerare il contatto: il player è già dentro al
+    // trigger, e un OnTriggerEnter2D non arriverebbe finché non esce e rientra.
+    private void Deliver(PlayerController player)
+    {
+        if (pickup != null)
+        {
+            pickup.ApplyEffect(player);
+            return;
+        }
+
+        if (ability != null)
+        {
+            ability.Grant(player);
+            return;
+        }
+
+        // I crediti sono già stati spesi: senza questo il player pagherebbe e
+        // non riceverebbe niente, in silenzio
+        Debug.LogWarning($"'{name}' è in vendita ma non ha né PickupController né ShopAbility: " +
+                         "il player ha pagato e non ha ricevuto niente.", this);
     }
 }
