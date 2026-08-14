@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using TMPro;
 
 // Abilità attive del player, da mettere sul GameObject Player accanto a
@@ -52,6 +53,18 @@ public class PlayerAbilities : MonoBehaviour
 
     [Header("UI")]
     [SerializeField] private TextMeshProUGUI abilityText;
+    // Icona dell'abilità selezionata. Il suo GameObject viene acceso e spento
+    // da questo script: finché il player non possiede niente non c'è niente da
+    // mostrare, e un riquadro vuoto nell'HUD sembrerebbe un errore.
+    [SerializeField] private Image abilityIcon;
+    // Indicizzato da (int)AbilityType, cioè nell'ordine dell'enum: Scatto,
+    // Onda d'urto, Rallenta Tempo, Scudo. Stessa convenzione di
+    // ShopRoom.abilitySprites, che disegna la stessa merce sul bancone.
+    [SerializeField] private Sprite[] abilityIcons;
+    [SerializeField] private Color iconReadyColor = Color.white;
+    // Attenuato con l'alfa e non con il grigio: sotto l'icona può esserci uno
+    // sfondo di qualsiasi colore, e sbiadire verso di lui funziona comunque
+    [SerializeField] private Color iconCooldownColor = new Color(1f, 1f, 1f, 0.4f);
 
     [Header("Test")]
     // TEMPORANEO: finché il negozio non vende le abilità non c'è modo di
@@ -530,7 +543,16 @@ public class PlayerAbilities : MonoBehaviour
         };
     }
 
+    // Le due metà sono indipendenti: assegnare nell'Inspector solo il testo o
+    // solo l'icona è una configurazione legittima, e la mancanza dell'una non
+    // deve impedire l'aggiornamento dell'altra.
     private void UpdateAbilityUI()
+    {
+        UpdateAbilityText();
+        UpdateAbilityIcon();
+    }
+
+    private void UpdateAbilityText()
     {
         if (abilityText == null) return;
 
@@ -544,5 +566,39 @@ public class PlayerAbilities : MonoBehaviour
         string state = remaining > 0f ? $"{remaining:F1}s" : "pronta";
 
         abilityText.text = $"Abilità: {DisplayName(currentAbility)} ({state})";
+    }
+
+    private void UpdateAbilityIcon()
+    {
+        if (abilityIcon == null) return;
+
+        // Nessuna abilità in tasca: si spegne il GameObject e basta, senza
+        // toccare sprite e colore. Alla prima Unlock si riaccende già scritto.
+        if (!hasSelection)
+        {
+            abilityIcon.gameObject.SetActive(false);
+            return;
+        }
+
+        abilityIcon.gameObject.SetActive(true);
+        abilityIcon.sprite = IconOf(currentAbility);
+
+        // Binario e non proporzionale al cooldown residuo: i secondi mancanti
+        // li dice già abilityText, all'icona basta dire pronta o non pronta.
+        abilityIcon.color = cooldownTimers[(int)currentAbility] > 0f
+            ? iconCooldownColor
+            : iconReadyColor;
+    }
+
+    // Un array più corto dell'enum, o con un buco, lascia l'icona senza sprite:
+    // l'Image mostra allora il suo quadrato pieno. È il segnale che manca una
+    // voce in abilityIcons, non un caso da nascondere.
+    private Sprite IconOf(AbilityType ability)
+    {
+        int index = (int)ability;
+
+        if (abilityIcons == null || index >= abilityIcons.Length) return null;
+
+        return abilityIcons[index];
     }
 }
