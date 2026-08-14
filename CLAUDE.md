@@ -4,29 +4,12 @@ Progetto d'esame. Unity 6 (2D, URP), C#, sviluppatore singolo.
 Dungeon crawler top-down a stanze fisse generate proceduralmente, ispirato a
 The Binding of Isaac.
 
-## Struttura
-
-- `Assets/Scripts/` — tutti gli script di gioco
-- `Assets/Prefabs/` — nemici, proiettili, pickup, bombe
-- `Assets/Prefabs/Rooms/` — i template di stanza da cui il dungeon viene generato
-- `Assets/Scenes/` — `MainMenu` (indice 0) e `SampleScene` (il gioco)
-- `Assets/Sprites/`, `Assets/audio/` — asset
-
 ## Architettura
 
 - `EnemyBase` — classe astratta con vita, morte, danno da contatto, riferimento al player. Fornisce anche le utilità condivise: `DirectionToPlayer()`, `MoveTowardsPlayer(speed)`, `SpawnProjectile(...)`, `FireRadialBurst(...)`, `SpawnEnemiesAroundSelf(...)`. **Tutti** i nemici ereditano da qui.
 - `BossBase : EnemyBase` — struttura comune a Boss e Miniboss: macchina a stati (movimento → telegrafo → azione), carica, fase di rabbia, barra della vita, morte con ricompensa. Le sottoclassi implementano solo `ChooseNextAction()`, `ExecuteAction()` e `UpdateEnrageVisual()`.
-- `PlayerController` — input, 4 modalità di fuoco, bombe, vita, potenziamenti
-- `PlayerVisuals` — sprite direzionali del player e arma orbitante; espone `MuzzlePosition`, cioè il punto da cui `PlayerController.Fire()` fa partire i proiettili
 - `DungeonGenerator` — genera il grafo delle celle su griglia, istanzia le stanze dai template, collega le porte, popola i nemici e sceglie stanza boss, miniboss e segreta. Gira in `Awake()`, sullo stesso GameObject del `RoomManager`
-- `RoomManager` — attiva una stanza alla volta, conta i nemici, blocca le porte, gestisce drop e condizione di vittoria
-- `RoomBounds` — dichiara le semi-dimensioni interne di una stanza, misurate dal suo centro
-- `RoomNavGrid` — griglia di celle percorribili costruita a runtime dai muri presenti in scena, usata dal pathfinding
 - `Pathfinder` — classe statica con A* a 8 direzioni sulla griglia. Come `VectorUtils` non è un componente: non va messa su nessun GameObject
-- `MinimapController` — disegna la minimappa dalle celle e dalle adiacenze che riceve dal generatore
-- `DoorTrigger` / `SecretWall` — transizioni tra stanze
-- `GameManager` — schermate di fine partita, pausa, ricarica scena
-- `AudioManager` — riproduce tutti gli SFX da una sorgente centrale
 - `VectorUtils` — classe statica (`Rotate`, `FromAngle`, `ToAngle`). Non è un componente: non va messa su nessun GameObject.
 
 ## Convenzioni da rispettare
