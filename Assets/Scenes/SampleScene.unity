@@ -2041,7 +2041,15 @@ MonoBehaviour:
   shieldDuration: 3
   shieldVisualPrefab: {fileID: 6131964746021695386, guid: 96b406c5d2890a7f9990b0a93804d98c, type: 3}
   abilityText: {fileID: 1354225333}
-  unlockAllForTesting: 0
+  abilityIcon: {fileID: 975532638}
+  abilityIcons:
+  - {fileID: 1334043512, guid: 15344b7e4974a8058a0b2896f47d1e6a, type: 3}
+  - {fileID: 776923470, guid: 15344b7e4974a8058a0b2896f47d1e6a, type: 3}
+  - {fileID: -1609852990, guid: 15344b7e4974a8058a0b2896f47d1e6a, type: 3}
+  - {fileID: -258496169, guid: 15344b7e4974a8058a0b2896f47d1e6a, type: 3}
+  iconReadyColor: {r: 1, g: 1, b: 1, a: 1}
+  iconCooldownColor: {r: 1, g: 1, b: 1, a: 0.4}
+  unlockAllForTesting: 1
 --- !u!1 &562820876
 GameObject:
   m_ObjectHideFlags: 0
@@ -2977,6 +2985,81 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 930418754}
   m_CullTransparentMesh: 1
+--- !u!1 &975532636
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 975532637}
+  - component: {fileID: 975532639}
+  - component: {fileID: 975532638}
+  m_Layer: 5
+  m_Name: AbilityIcon
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &975532637
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 975532636}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1718961251}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 10, y: -191}
+  m_SizeDelta: {x: 32, y: 32}
+  m_Pivot: {x: 0, y: 1}
+--- !u!114 &975532638
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 975532636}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 0
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 0}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &975532639
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 975532636}
+  m_CullTransparentMesh: 1
 --- !u!1 &1048931932
 GameObject:
   m_ObjectHideFlags: 0
@@ -3149,6 +3232,10 @@ MonoBehaviour:
   enemyDeathClip: {fileID: 8300000, guid: 646adc1eeed5656a38736fe4eb199e69, type: 3}
   explosionClip: {fileID: 8300000, guid: 8c3d3e3fa962bf3e4991d3ca04dd0cf6, type: 3}
   pickupClip: {fileID: 8300000, guid: c6b2d79b96918a2b68d2d739478601df, type: 3}
+  dashClip: {fileID: 0}
+  shockwaveClip: {fileID: 0}
+  slowTimeClip: {fileID: 0}
+  shieldClip: {fileID: 0}
   pitchVariation: 0.2
 --- !u!4 &1052987750
 Transform:
@@ -3625,7 +3712,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 10, y: -191}
+  m_AnchoredPosition: {x: 50, y: -191}
   m_SizeDelta: {x: 350, y: 50}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &1354225333
@@ -4400,6 +4487,7 @@ MonoBehaviour:
   minibossPrefab: {fileID: 0}
   minEnemiesPerRoom: 1
   maxEnemiesPerRoom: 3
+  spawnDoorClearance: 2.5
   minibossDistanceBias: 1
   minimap: {fileID: 1718961252}
   randomSeed: 0
@@ -4509,6 +4597,7 @@ RectTransform:
   - {fileID: 2104406495}
   - {fileID: 1150954271}
   - {fileID: 1758450760}
+  - {fileID: 975532637}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
