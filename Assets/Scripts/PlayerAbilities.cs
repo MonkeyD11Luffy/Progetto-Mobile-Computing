@@ -284,6 +284,8 @@ public class PlayerAbilities : MonoBehaviour
     // Scatto rapido, invulnerabile, che fa danno ai nemici attraversati.
     private void Dash()
     {
+        if (AudioManager.Instance != null) AudioManager.Instance.PlayDash();
+
         StartCoroutine(DashRoutine());
     }
 
@@ -378,6 +380,8 @@ public class PlayerAbilities : MonoBehaviour
     // proiettili nemici: è la via d'uscita quando si è circondati.
     private void Shockwave()
     {
+        if (AudioManager.Instance != null) AudioManager.Instance.PlayShockwave();
+
         if (shockwaveEffectPrefab != null)
         {
             Instantiate(shockwaveEffectPrefab, transform.position, Quaternion.identity);
@@ -401,6 +405,8 @@ public class PlayerAbilities : MonoBehaviour
 
     private void SlowTime()
     {
+        if (AudioManager.Instance != null) AudioManager.Instance.PlaySlowTime();
+
         StartCoroutine(SlowTimeRoutine());
     }
 
@@ -481,6 +487,8 @@ public class PlayerAbilities : MonoBehaviour
 
     private void Shield()
     {
+        if (AudioManager.Instance != null) AudioManager.Instance.PlayShield();
+
         StartCoroutine(ShieldRoutine());
     }
 

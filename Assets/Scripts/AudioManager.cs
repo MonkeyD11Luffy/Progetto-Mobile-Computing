@@ -22,6 +22,12 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private AudioClip explosionClip;
     [SerializeField] private AudioClip pickupClip;
 
+    [Header("Abilità")]
+    [SerializeField] private AudioClip dashClip;
+    [SerializeField] private AudioClip shockwaveClip;
+    [SerializeField] private AudioClip slowTimeClip;
+    [SerializeField] private AudioClip shieldClip;
+
     [Header("Variazione")]
     [SerializeField] private float pitchVariation = 0.1f;
 
@@ -65,6 +71,11 @@ public class AudioManager : MonoBehaviour
     public void PlayEnemyDeath() => PlaySfx(enemyDeathClip, 0.7f);
     public void PlayExplosion() => PlaySfx(explosionClip);
     public void PlayPickup() => PlaySfx(pickupClip);
+
+    public void PlayDash() => PlaySfx(dashClip, 0.6f);
+    public void PlayShockwave() => PlaySfx(shockwaveClip, 0.8f);
+    public void PlaySlowTime() => PlaySfx(slowTimeClip, 0.7f);
+    public void PlayShield() => PlaySfx(shieldClip, 0.7f);
 
     // Cambia traccia con una dissolvenza. Con clip a null la musica sfuma
     // fino a fermarsi. Chiedere la traccia già in riproduzione non fa nulla:
