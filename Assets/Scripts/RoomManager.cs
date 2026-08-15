@@ -296,7 +296,12 @@ public class RoomManager : MonoBehaviour
         {
             if (child.CompareTag("Door"))
             {
-                child.gameObject.SetActive(active);
+                // Il GameObject resta acceso: è DoorTrigger a cambiare faccia e
+                // a spegnere il collider, così una porta chiusa si vede chiusa
+                // invece di sparire dalla stanza.
+                DoorTrigger door = child.GetComponent<DoorTrigger>();
+                if (door != null) door.SetOpen(active);
+
                 continue; // una porta non contiene altre porte
             }
 

@@ -10,6 +10,12 @@ public class DoorTrigger : MonoBehaviour
     // QUESTA porta (cioè arrivando dalla stanza adiacente).
     [SerializeField] private Vector2 arrivalPosition;
 
+    [Header("Aspetto")]
+    // Le due facce della porta. Lasciarne una vuota significa "non cambiare
+    // sprite in quello stato": la porta resta com'è invece di sparire.
+    [SerializeField] private Sprite openSprite;
+    [SerializeField] private Sprite closedSprite;
+
     [Header("Destinazione")]
     [SerializeField] private GameObject targetRoom;
     [SerializeField] private Vector2 playerSpawnPosition;
@@ -27,6 +33,22 @@ public class DoorTrigger : MonoBehaviour
     {
         targetRoom = room;
         playerSpawnPosition = spawnPosition;
+    }
+
+    // Apre o chiude la porta lasciando il GameObject acceso: cambia la faccia e
+    // toglie di mezzo il collider. Spegnere l'oggetto, come si faceva prima,
+    // farebbe sparire anche lo sprite, e una porta chiusa deve vedersi.
+    public void SetOpen(bool open)
+    {
+        Sprite sprite = open ? openSprite : closedSprite;
+
+        // Sprite non assegnato: si tiene quello corrente. Una porta senza le due
+        // facce configurate resta com'era, invece di diventare invisibile.
+        SpriteRenderer spriteRenderer = GetComponent<SpriteRenderer>();
+        if (spriteRenderer != null && sprite != null) spriteRenderer.sprite = sprite;
+
+        Collider2D doorCollider = GetComponent<Collider2D>();
+        if (doorCollider != null) doorCollider.enabled = open;
     }
 
     private void OnTriggerEnter2D(Collider2D other)

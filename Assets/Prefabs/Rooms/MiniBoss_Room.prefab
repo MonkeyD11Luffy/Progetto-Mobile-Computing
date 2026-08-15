@@ -357,7 +357,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 20
   m_MaskInteraction: 0
   m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
   m_Color: {r: 0.9143071, g: 1, b: 0, a: 1}
@@ -429,6 +429,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DoorTrigger
   direction: 0
   arrivalPosition: {x: 0, y: 2.8}
+  openSprite: {fileID: 36024015, guid: 9bec7f9d8f238056599892dfd9e146a9, type: 3}
+  closedSprite: {fileID: -1301808215, guid: 9bec7f9d8f238056599892dfd9e146a9, type: 3}
   targetRoom: {fileID: 0}
   playerSpawnPosition: {x: 0, y: -2.8}
 --- !u!1 &3429518268189454172
@@ -1593,13 +1595,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4306354961249581773}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 1, w: 0}
   m_LocalPosition: {x: 0, y: -4, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4093327021684130474}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 180}
 --- !u!212 &119654882284738641
 SpriteRenderer:
   serializedVersion: 2
@@ -1647,7 +1649,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 20
   m_MaskInteraction: 0
   m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
   m_Color: {r: 0.9143071, g: 1, b: 0, a: 1}
@@ -1719,6 +1721,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DoorTrigger
   direction: 1
   arrivalPosition: {x: 0, y: -2.8}
+  openSprite: {fileID: 36024015, guid: 9bec7f9d8f238056599892dfd9e146a9, type: 3}
+  closedSprite: {fileID: -1301808215, guid: 9bec7f9d8f238056599892dfd9e146a9, type: 3}
   targetRoom: {fileID: 0}
   playerSpawnPosition: {x: 0, y: 2.8}
 --- !u!1 &4750870882565370405
@@ -1834,13 +1838,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4772397144646161890}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: -0.7071068, w: 0.7071068}
   m_LocalPosition: {x: 6, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4093327021684130474}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: -90}
 --- !u!212 &1008759527976519466
 SpriteRenderer:
   serializedVersion: 2
@@ -1888,7 +1892,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 20
   m_MaskInteraction: 0
   m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
   m_Color: {r: 0.9143071, g: 1, b: 0, a: 1}
@@ -1960,6 +1964,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DoorTrigger
   direction: 2
   arrivalPosition: {x: 4.8, y: 0}
+  openSprite: {fileID: 36024015, guid: 9bec7f9d8f238056599892dfd9e146a9, type: 3}
+  closedSprite: {fileID: -1301808215, guid: 9bec7f9d8f238056599892dfd9e146a9, type: 3}
   targetRoom: {fileID: 0}
   playerSpawnPosition: {x: -2.8, y: 0}
 --- !u!1 &5853106819578799969
@@ -1989,13 +1995,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5853106819578799969}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
   m_LocalPosition: {x: -6, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4093327021684130474}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 90}
 --- !u!212 &6388818599617741553
 SpriteRenderer:
   serializedVersion: 2
@@ -2043,7 +2049,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 20
   m_MaskInteraction: 0
   m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
   m_Color: {r: 0.9143071, g: 1, b: 0, a: 1}
@@ -2115,6 +2121,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DoorTrigger
   direction: 3
   arrivalPosition: {x: -4.8, y: 0}
+  openSprite: {fileID: 36024015, guid: 9bec7f9d8f238056599892dfd9e146a9, type: 3}
+  closedSprite: {fileID: -1301808215, guid: 9bec7f9d8f238056599892dfd9e146a9, type: 3}
   targetRoom: {fileID: 0}
   playerSpawnPosition: {x: 2.8, y: 0}
 --- !u!1 &6683907197851643330
