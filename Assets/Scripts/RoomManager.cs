@@ -67,6 +67,16 @@ public class RoomManager : MonoBehaviour
     // invece che alla radice della scena, dove sopravvivrebbero al cambio stanza
     public GameObject CurrentRoom => currentRoom;
 
+    // Genitore da passare a Instantiate per gli oggetti temporanei (proiettili,
+    // effetti): null se non c'è ancora una stanza attiva, che per Instantiate
+    // significa "alla radice della scena". Sta qui perché il null-check era
+    // ripetuto identico in ogni chiamante.
+    public Transform CurrentRoomTransform => currentRoom != null ? currentRoom.transform : null;
+
+    // Lo legge chi fa passare il player fra le stanze senza essere una porta
+    // (SecretWall): le porte si chiudono da sole con SetDoorsActive, un muro no.
+    public bool IsCurrentRoomCleared => roomCleared;
+
     private void Awake()
     {
         Instance = this;
@@ -188,7 +198,7 @@ public class RoomManager : MonoBehaviour
     {
         if (creditPrefab == null || amount <= 0) return;
 
-        Transform parent = currentRoom != null ? currentRoom.transform : null;
+        Transform parent = CurrentRoomTransform;
 
         for (int i = 0; i < amount; i++)
         {

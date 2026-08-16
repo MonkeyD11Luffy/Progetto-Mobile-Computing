@@ -66,12 +66,6 @@ public class PlayerAbilities : MonoBehaviour
     // sfondo di qualsiasi colore, e sbiadire verso di lui funziona comunque
     [SerializeField] private Color iconCooldownColor = new Color(1f, 1f, 1f, 0.4f);
 
-    [Header("Test")]
-    // TEMPORANEO: finché il negozio non vende le abilità non c'è modo di
-    // sbloccarle in partita, quindi il sistema non sarebbe provabile. Va tolto
-    // insieme a Start() quando le abilità saranno in vendita.
-    [SerializeField] private bool unlockAllForTesting = false;
-
     // Le abilità nell'ordine in cui sono dichiarate nell'enum: è anche l'ordine
     // in cui switchKey le fa girare. Ricavarla dall'enum invece di scrivere 4
     // tiene allineati gli array se un domani se ne aggiunge una quinta.
@@ -139,20 +133,6 @@ public class PlayerAbilities : MonoBehaviour
         // velocità del player e velo — ed esce da solo se non c'è niente da
         // interrompere, come alla prima stanza
         EndSlowTime();
-    }
-
-    // TEMPORANEO, insieme a unlockAllForTesting. In Start e non in Awake per
-    // lasciare il tempo a chi sblocca abilità dall'Awake di farlo prima.
-    private void Start()
-    {
-        if (!unlockAllForTesting) return;
-
-        // In ordine di enum, quindi la selezione iniziale finisce sulla prima:
-        // è Unlock stessa a puntarci, essendo la prima a essere sbloccata
-        foreach (AbilityType ability in AllAbilities)
-        {
-            Unlock(ability);
-        }
     }
 
     private void Update()
@@ -328,11 +308,14 @@ public class PlayerAbilities : MonoBehaviour
         // Figlio della stanza corrente e non della radice della scena: così lo
         // spegne ActivateOnly insieme alla stanza, invece di restare appeso a
         // mezz'aria dopo un cambio stanza
-        Transform parent = RoomManager.Instance != null && RoomManager.Instance.CurrentRoom != null
-            ? RoomManager.Instance.CurrentRoom.transform
-            : null;
+        Instantiate(dashTrailPrefab, transform.position, rotation, CurrentRoomTransform());
+    }
 
-        Instantiate(dashTrailPrefab, transform.position, rotation, parent);
+    // Genitore degli effetti creati a runtime. Senza RoomManager in scena si
+    // torna alla radice, che è quello che Instantiate fa con un genitore nullo.
+    private static Transform CurrentRoomTransform()
+    {
+        return RoomManager.Instance != null ? RoomManager.Instance.CurrentRoomTransform : null;
     }
 
     // Come EndSlowTime ed EndShield: idempotente, perché la fine può arrivare
@@ -384,7 +367,10 @@ public class PlayerAbilities : MonoBehaviour
 
         if (shockwaveEffectPrefab != null)
         {
-            Instantiate(shockwaveEffectPrefab, transform.position, Quaternion.identity);
+            // Figlio della stanza corrente come la scia dello scatto: appeso
+            // alla radice della scena resterebbe a mezz'aria dopo un cambio
+            // stanza, perché ActivateOnly non lo spegnerebbe con la stanza
+            Instantiate(shockwaveEffectPrefab, transform.position, Quaternion.identity, CurrentRoomTransform());
         }
 
         Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, shockwaveRadius);

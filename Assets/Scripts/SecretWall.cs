@@ -61,6 +61,12 @@ public class SecretWall : MonoBehaviour
 
         if (RoomManager.Instance == null || targetRoom == null) return;
 
+        // Stessa serratura delle porte: con i nemici ancora vivi non si esce.
+        // Le porte si chiudono da sole (SetDoorsActive spegne il collider), un
+        // muro no, quindi senza questo il muro segreto sarebbe la via di fuga
+        // da una stanza che dovrebbe essere chiusa.
+        if (!RoomManager.Instance.IsCurrentRoomCleared) return;
+
         RoomManager.Instance.GoToRoom(targetRoom, playerSpawnPosition);
     }
 }

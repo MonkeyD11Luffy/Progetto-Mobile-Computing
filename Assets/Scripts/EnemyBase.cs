@@ -166,7 +166,10 @@ public abstract class EnemyBase : MonoBehaviour
 
             // I crediti cadono dove il nemico è morto: li fa nascere il
             // RoomManager, che sa in quale stanza appenderli
-            if (creditDrop > 0 && Random.value <= creditDropChance)
+            //
+            // Confronto stretto: Random.value restituisce anche zero, quindi
+            // con <= una probabilità di 0 farebbe cadere crediti lo stesso
+            if (creditDrop > 0 && Random.value < creditDropChance)
             {
                 RoomManager.Instance.SpawnCredits(transform.position, creditDrop);
             }
@@ -518,7 +521,13 @@ public abstract class EnemyBase : MonoBehaviour
     {
         if (prefab == null) return;
 
-        GameObject projectile = Instantiate(prefab, origin, Quaternion.identity);
+        // Figlio della stanza corrente e non della radice della scena: appeso
+        // alla radice, un colpo ancora in volo attraversa la porta insieme al
+        // player e lo raggiunge nella stanza dopo, dove ActivateOnly non può
+        // spegnerlo perché non appartiene a nessuna stanza.
+        Transform parent = RoomManager.Instance != null ? RoomManager.Instance.CurrentRoomTransform : null;
+
+        GameObject projectile = Instantiate(prefab, origin, Quaternion.identity, parent);
 
         Rigidbody2D projRb = projectile.GetComponent<Rigidbody2D>();
         if (projRb != null)

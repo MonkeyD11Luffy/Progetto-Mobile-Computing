@@ -191,6 +191,10 @@ public abstract class BossBase : EnemyBase
     // Estrae un'azione dal pool evitando, quando può, di ripetere l'ultima
     protected T PickAction<T>(T[] pool, T lastAction) where T : struct
     {
+        // Un pool vuoto farebbe eccezione sull'indicizzazione: si ripete
+        // l'ultima azione, che è sempre una scelta valida
+        if (pool == null || pool.Length == 0) return lastAction;
+
         T chosen;
         int attempts = 0;
 

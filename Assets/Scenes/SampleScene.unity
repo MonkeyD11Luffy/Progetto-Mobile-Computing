@@ -4434,7 +4434,7 @@ MonoBehaviour:
   - {fileID: 7961527381625162984, guid: e60efc207ebbefc94957805b3c4d17cc, type: 3}
   minimap: {fileID: 1718961252}
   pixelPerfectCamera: {fileID: 519420034}
-  defaultReferenceResolution: {x: 240, y: 135}
+  defaultReferenceResolution: {x: 240, y: 160}
   doorIgnoreDelay: 0.25
 --- !u!4 &1684176010
 Transform:

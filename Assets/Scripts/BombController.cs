@@ -46,9 +46,15 @@ public class BombController : MonoBehaviour
         if (AudioManager.Instance != null) AudioManager.Instance.PlayExplosion();
 
         if (explosionEffectPrefab != null)
-{
-    Instantiate(explosionEffectPrefab, transform.position, Quaternion.identity);
-}
+        {
+            // Figlio della stanza corrente come la bomba stessa: appeso alla
+            // radice della scena, ActivateOnly non lo spegnerebbe al cambio
+            // stanza perché non apparterrebbe a nessuna stanza
+            Transform parent = RoomManager.Instance != null ? RoomManager.Instance.CurrentRoomTransform : null;
+
+            Instantiate(explosionEffectPrefab, transform.position, Quaternion.identity, parent);
+        }
+
         Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, explosionRadius);
 
         foreach (Collider2D hit in hits)

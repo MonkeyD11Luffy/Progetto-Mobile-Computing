@@ -299,31 +299,43 @@ public class PlayerController : MonoBehaviour
 }
    
     private void SpawnProjectile(Vector2 origin, Vector2 direction, bool piercing, float lifetime = -1f)
-{
-    GameObject projectile = Instantiate(projectilePrefab, origin, Quaternion.identity);
-
-    ProjectileController projController = projectile.GetComponent<ProjectileController>();
-    if (projController != null)
     {
-        projController.SetDamage(projectileDamage);
-        projController.SetPiercing(piercing);
-        projController.SetBounces(projectileBounces);
+        // Come la bomba: figlio della stanza corrente e non della radice della
+        // scena. Sparando e cambiando stanza subito, un colpo appeso alla radice
+        // continuerebbe a volare nella stanza nuova, dove ActivateOnly non può
+        // spegnerlo perché non appartiene a nessuna stanza.
+        GameObject projectile = Instantiate(projectilePrefab, origin, Quaternion.identity, CurrentRoomTransform());
 
-        // Se non viene passato un lifetime, resta quello di default del Prefab
-        if (lifetime > 0f)
+        ProjectileController projController = projectile.GetComponent<ProjectileController>();
+        if (projController != null)
         {
-            projController.SetLifetime(lifetime);
+            projController.SetDamage(projectileDamage);
+            projController.SetPiercing(piercing);
+            projController.SetBounces(projectileBounces);
+
+            // Se non viene passato un lifetime, resta quello di default del Prefab
+            if (lifetime > 0f)
+            {
+                projController.SetLifetime(lifetime);
+            }
         }
+
+        Rigidbody2D projRb = projectile.GetComponent<Rigidbody2D>();
+        if (projRb != null)
+        {
+            projRb.linearVelocity = direction * projectileSpeed;
+        }
+
+        projectile.transform.rotation = Quaternion.Euler(0, 0, VectorUtils.ToAngle(direction));
     }
 
-    Rigidbody2D projRb = projectile.GetComponent<Rigidbody2D>();
-    if (projRb != null)
+    // Genitore degli oggetti creati a runtime (proiettili, bombe): senza
+    // RoomManager in scena si torna alla radice, che è quello che Instantiate
+    // fa già con un genitore nullo.
+    private static Transform CurrentRoomTransform()
     {
-        projRb.linearVelocity = direction * projectileSpeed;
+        return RoomManager.Instance != null ? RoomManager.Instance.CurrentRoomTransform : null;
     }
-
-    projectile.transform.rotation = Quaternion.Euler(0, 0, VectorUtils.ToAngle(direction));
-}
 
     private void MeleeAttack(Vector2 direction)
     {
@@ -385,11 +397,7 @@ public class PlayerController : MonoBehaviour
 
         // Figlia della stanza corrente: appesa alla radice della scena
         // continuerebbe a esplodere anche dopo essere passati di là
-        Transform parent = RoomManager.Instance != null && RoomManager.Instance.CurrentRoom != null
-            ? RoomManager.Instance.CurrentRoom.transform
-            : null;
-
-        Instantiate(bombPrefab, transform.position, Quaternion.identity, parent);
+        Instantiate(bombPrefab, transform.position, Quaternion.identity, CurrentRoomTransform());
         currentBombs--;
         UpdateBombUI();
     }
