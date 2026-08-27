@@ -53,6 +53,8 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private TextMeshProUGUI weaponText;
     [SerializeField] private TextMeshProUGUI upgradePopupText;
     [SerializeField] private float upgradePopupDuration = 1.5f;
+    [SerializeField] private Transform healthIconContainer;
+    [SerializeField] private GameObject healthIconPrefab;
 
     [Header("Feedback")]
     [SerializeField] private Transform meleeVisual;
@@ -484,7 +486,21 @@ public class PlayerController : MonoBehaviour
 
     private void UpdateHealthUI()
     {
-        if (healthText != null)
+        if (healthIconContainer != null && healthIconPrefab != null)
+        {
+            // maxHealth cresce a runtime (IncreaseMaxHealth): le icone mancanti
+            // vengono create qui, quelle gia' esistenti sono riusate.
+            while (healthIconContainer.childCount < maxHealth)
+            {
+                Instantiate(healthIconPrefab, healthIconContainer);
+            }
+
+            for (int i = 0; i < healthIconContainer.childCount; i++)
+            {
+                healthIconContainer.GetChild(i).gameObject.SetActive(i < currentHealth);
+            }
+        }
+        else if (healthText != null)
         {
             healthText.text = $"Vita: {currentHealth}/{maxHealth}";
         }
