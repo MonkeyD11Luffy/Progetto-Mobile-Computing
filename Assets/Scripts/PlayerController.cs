@@ -567,6 +567,7 @@ public class PlayerController : MonoBehaviour
     }
 
     public int Credits => currentCredits;
+    public int CurrentHealth => currentHealth;
 
     public void AddCredits(int amount)
     {

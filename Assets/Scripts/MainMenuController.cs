@@ -5,6 +5,7 @@ public class MainMenuController : MonoBehaviour
 {
     [SerializeField] private string gameSceneName = "SampleScene";
     [SerializeField] private GameObject controlsPanel;
+    [SerializeField] private GameObject leaderboardPanel;
 
     public void PlayGame()
     {
@@ -21,6 +22,18 @@ public class MainMenuController : MonoBehaviour
     public void HideControls()
     {
         if (controlsPanel != null) controlsPanel.SetActive(false);
+    }
+
+    // Il pannello si aggiorna da solo quando si accende: LeaderboardPanel
+    // ricostruisce le righe in OnEnable.
+    public void OpenLeaderboard()
+    {
+        if (leaderboardPanel != null) leaderboardPanel.SetActive(true);
+    }
+
+    public void CloseLeaderboard()
+    {
+        if (leaderboardPanel != null) leaderboardPanel.SetActive(false);
     }
 
     public void QuitGame()

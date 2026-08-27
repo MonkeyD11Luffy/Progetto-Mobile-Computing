@@ -129,6 +129,7 @@ public class RoomManager : MonoBehaviour
         ActivateOnly(room);
         ApplyCameraFor(room);
         currentRoom = room;
+        RunStats.Instance?.RegisterRoom(room);
         doorIgnoreTimer = doorIgnoreDelay;
 
         enemiesRemaining = CountEnemiesInRoom(room);
@@ -150,6 +151,8 @@ public class RoomManager : MonoBehaviour
 
     public void RegisterEnemyDeath()
     {
+        RunStats.Instance?.RegisterKill();
+
         if (enemiesRemaining > 0) enemiesRemaining--;
 
         // roomCleared evita che un conteggio sfasato faccia cadere più pickup
