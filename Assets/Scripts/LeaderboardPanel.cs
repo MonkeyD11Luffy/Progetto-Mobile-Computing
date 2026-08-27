@@ -27,7 +27,7 @@ public class LeaderboardPanel : MonoBehaviour
 
         ClearRows();
 
-        List<Account> leaderboard = AccountManager.Instance != null
+        List<LeaderboardEntry> leaderboard = AccountManager.Instance != null
             ? AccountManager.Instance.GetLeaderboard()
             : null;
 
@@ -43,8 +43,8 @@ public class LeaderboardPanel : MonoBehaviour
 
         for (int i = 0; i < count; i++)
         {
-            Account account = leaderboard[i];
-            FillRow(CreateRow(), $"{i + 1}.", account.email, account.bestScore.ToString());
+            LeaderboardEntry entry = leaderboard[i];
+            FillRow(CreateRow(), $"{i + 1}.", entry.displayName, entry.bestScore.ToString());
         }
     }
 
@@ -61,11 +61,11 @@ public class LeaderboardPanel : MonoBehaviour
         return Instantiate(rowPrefab, rowContainer);
     }
 
-    // Il prefab può avere tre testi (posizione, email, punteggio) oppure uno
+    // Il prefab può avere tre testi (posizione, nome, punteggio) oppure uno
     // solo: nel secondo caso la riga viene composta in un'unica stringa. Le
     // etichette si cercano per componente e non per nome, così rinominare un
     // figlio nel prefab non rompe la classifica.
-    private void FillRow(GameObject row, string position, string email, string score)
+    private void FillRow(GameObject row, string position, string playerName, string score)
     {
         TextMeshProUGUI[] labels = row.GetComponentsInChildren<TextMeshProUGUI>(true);
         if (labels.Length == 0) return;
@@ -73,13 +73,13 @@ public class LeaderboardPanel : MonoBehaviour
         if (labels.Length >= 3)
         {
             labels[0].text = position;
-            labels[1].text = email;
+            labels[1].text = playerName;
             labels[2].text = score;
             return;
         }
 
-        labels[0].text = string.IsNullOrEmpty(email)
+        labels[0].text = string.IsNullOrEmpty(playerName)
             ? position
-            : $"{position} {email} — {score}";
+            : $"{position} {playerName} — {score}";
     }
 }

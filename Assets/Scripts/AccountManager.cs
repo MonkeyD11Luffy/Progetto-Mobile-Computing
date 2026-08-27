@@ -11,6 +11,7 @@ using UnityEngine;
 public class Account
 {
     public string email;
+    public string displayName;   // nome mostrato in classifica, unico fra gli account
     public string salt;          // base64, 16 byte casuali
     public string passwordHash;  // base64, PBKDF2-SHA256 del salt + password
     public int bestScore;
@@ -23,6 +24,20 @@ public class Account
 public class AccountDatabase
 {
     public List<Account> accounts = new List<Account>();
+
+    // Email dell'ultimo accesso: al riavvio la sessione riparte da qui senza
+    // richiedere la password. Solo l'email — mai la password, in chiaro o no.
+    public string lastLoggedInEmail;
+}
+
+// Quello che la classifica ha il diritto di vedere: il nome e il punteggio.
+// Restituire l'Account intero significherebbe passare alla UI anche email,
+// salt e hash della password.
+[Serializable]
+public class LeaderboardEntry
+{
+    public string displayName;
+    public int bestScore;
 }
 
 public enum RegisterResult
@@ -30,6 +45,8 @@ public enum RegisterResult
     Success,
     EmailAlreadyExists,
     InvalidEmail,
+    InvalidDisplayName,
+    DisplayNameAlreadyExists,
     PasswordTooShort
 }
 
@@ -51,6 +68,7 @@ public class AccountManager : MonoBehaviour
     private const int SaltBytes = 16;
     private const int HashBytes = 32;
     private const int MinPasswordLength = 8;
+    private const int MaxDisplayNameLength = 20;
     private const string FileName = "accounts.json";
 
     // Controllo minimo: qualcosa, @, qualcosa, punto, qualcosa, senza spazi.
@@ -64,6 +82,18 @@ public class AccountManager : MonoBehaviour
 
     public string CurrentEmail => currentEmail;
     public bool IsLoggedIn => !string.IsNullOrEmpty(currentEmail);
+
+    // Il nome dell'account collegato: stringa vuota se non c'è nessuna sessione.
+    // Si legge dall'account e non da una copia in un campo, così resta valido
+    // anche se un giorno il nome diventerà modificabile.
+    public string CurrentDisplayName
+    {
+        get
+        {
+            Account account = IsLoggedIn ? FindAccount(currentEmail) : null;
+            return account != null ? account.displayName : string.Empty;
+        }
+    }
 
     private void Awake()
     {
@@ -81,17 +111,38 @@ public class AccountManager : MonoBehaviour
 
         filePath = Path.Combine(Application.persistentDataPath, FileName);
         Load();
+        RestoreSession();
+    }
+
+    // La sessione salvata vale solo se l'account esiste ancora: un file
+    // modificato a mano potrebbe puntare a un account cancellato.
+    private void RestoreSession()
+    {
+        string saved = Normalize(database.lastLoggedInEmail);
+
+        if (string.IsNullOrEmpty(saved)) return;
+
+        if (FindAccount(saved) == null)
+        {
+            database.lastLoggedInEmail = string.Empty;
+            return;
+        }
+
+        currentEmail = saved;
     }
 
     // ---------------------------------------------------------------- account
 
-    public RegisterResult Register(string email, string password)
+    public RegisterResult Register(string email, string displayName, string password)
     {
         string normalized = Normalize(email);
+        string cleanName = CleanDisplayName(displayName);
 
         if (!IsValidEmail(normalized)) return RegisterResult.InvalidEmail;
+        if (!IsValidDisplayName(cleanName)) return RegisterResult.InvalidDisplayName;
         if (password == null || password.Length < MinPasswordLength) return RegisterResult.PasswordTooShort;
         if (FindAccount(normalized) != null) return RegisterResult.EmailAlreadyExists;
+        if (FindAccountByDisplayName(cleanName) != null) return RegisterResult.DisplayNameAlreadyExists;
 
         byte[] salt = new byte[SaltBytes];
         using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
@@ -102,6 +153,7 @@ public class AccountManager : MonoBehaviour
         Account account = new Account
         {
             email = normalized,
+            displayName = cleanName,
             salt = Convert.ToBase64String(salt),
             passwordHash = Convert.ToBase64String(ComputeHash(password, salt)),
             bestScore = 0,
@@ -109,9 +161,8 @@ public class AccountManager : MonoBehaviour
         };
 
         database.accounts.Add(account);
-        Save();
+        SetSession(normalized);
 
-        currentEmail = normalized;
         return RegisterResult.Success;
     }
 
@@ -126,13 +177,24 @@ public class AccountManager : MonoBehaviour
 
         if (!VerifyPassword(account, password)) return LoginResult.WrongPassword;
 
-        currentEmail = normalized;
+        SetSession(normalized);
         return LoginResult.Success;
     }
 
     public void Logout()
     {
         currentEmail = null;
+        database.lastLoggedInEmail = string.Empty;
+        Save();
+    }
+
+    // Un solo punto in cui la sessione cambia: la memoria e il file restano
+    // allineati, e chi riapre il gioco ritrova l'ultimo account collegato.
+    private void SetSession(string normalizedEmail)
+    {
+        currentEmail = normalizedEmail;
+        database.lastLoggedInEmail = normalizedEmail;
+        Save();
     }
 
     // ----------------------------------------------------------------- record
@@ -155,11 +217,24 @@ public class AccountManager : MonoBehaviour
         return isNewRecord;
     }
 
-    // Copia della lista, non quella interna: chi la ordina o la filtra per
-    // mostrarla in UI non deve poter riordinare il database.
-    public List<Account> GetLeaderboard()
+    // Voci nuove, non gli Account interni: chi la ordina o la filtra per
+    // mostrarla in UI non deve poter riordinare il database, e la UI non ha
+    // motivo di vedere email e credenziali.
+    public List<LeaderboardEntry> GetLeaderboard()
     {
-        List<Account> sorted = new List<Account>(database.accounts);
+        List<LeaderboardEntry> sorted = new List<LeaderboardEntry>();
+
+        foreach (Account account in database.accounts)
+        {
+            if (account == null) continue;
+
+            sorted.Add(new LeaderboardEntry
+            {
+                displayName = DisplayNameOf(account),
+                bestScore = account.bestScore
+            });
+        }
+
         sorted.Sort((a, b) => b.bestScore.CompareTo(a.bestScore));
         return sorted;
     }
@@ -212,6 +287,47 @@ public class AccountManager : MonoBehaviour
         }
 
         return null;
+    }
+
+    private Account FindAccountByDisplayName(string cleanName)
+    {
+        foreach (Account account in database.accounts)
+        {
+            if (account == null) continue;
+
+            // Confronto senza distinzione di maiuscole: due nomi che differiscono
+            // solo per il maiuscolo sarebbero indistinguibili in classifica.
+            if (string.Equals(CleanDisplayName(account.displayName), cleanName,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return account;
+            }
+        }
+
+        return null;
+    }
+
+    // Gli account salvati prima dell'introduzione del nome non ne hanno uno:
+    // in classifica si mostra la parte dell'email prima della chiocciola invece
+    // di una riga senza nome.
+    private static string DisplayNameOf(Account account)
+    {
+        string name = CleanDisplayName(account.displayName);
+        if (!string.IsNullOrEmpty(name)) return name;
+
+        string email = Normalize(account.email);
+        int at = email.IndexOf('@');
+        return at > 0 ? email.Substring(0, at) : email;
+    }
+
+    private static string CleanDisplayName(string displayName)
+    {
+        return displayName == null ? string.Empty : displayName.Trim();
+    }
+
+    private static bool IsValidDisplayName(string cleanName)
+    {
+        return !string.IsNullOrEmpty(cleanName) && cleanName.Length <= MaxDisplayNameLength;
     }
 
     private static string Normalize(string email)
