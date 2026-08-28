@@ -550,6 +550,10 @@ public class PlayerAbilities : MonoBehaviour
     {
         if (abilityText == null) return;
 
+        // Stessa fonte del colore dell'icona: testo e icona sbiadiscono e si
+        // riaccendono insieme, senza ricalcolare qui lo stato di pronto
+        abilityText.color = CurrentAbilityColor();
+
         if (!hasSelection)
         {
             abilityText.text = "Abilità: nessuna";
@@ -560,6 +564,16 @@ public class PlayerAbilities : MonoBehaviour
         string state = remaining > 0f ? $"{remaining:F1}s" : "pronta";
 
         abilityText.text = $"Abilità: {DisplayName(currentAbility)} ({state})";
+    }
+
+    // Binario e non proporzionale al cooldown residuo: i secondi mancanti li
+    // dice la scritta, al colore basta dire pronta o non pronta. Senza abilità
+    // in tasca vale il colore attenuato: non c'è niente da usare.
+    private Color CurrentAbilityColor()
+    {
+        if (!hasSelection) return iconCooldownColor;
+
+        return cooldownTimers[(int)currentAbility] > 0f ? iconCooldownColor : iconReadyColor;
     }
 
     private void UpdateAbilityIcon()
@@ -576,12 +590,7 @@ public class PlayerAbilities : MonoBehaviour
 
         abilityIcon.gameObject.SetActive(true);
         abilityIcon.sprite = IconOf(currentAbility);
-
-        // Binario e non proporzionale al cooldown residuo: i secondi mancanti
-        // li dice già abilityText, all'icona basta dire pronta o non pronta.
-        abilityIcon.color = cooldownTimers[(int)currentAbility] > 0f
-            ? iconCooldownColor
-            : iconReadyColor;
+        abilityIcon.color = CurrentAbilityColor();
     }
 
     // Un array più corto dell'enum, o con un buco, lascia l'icona senza sprite:

@@ -54,6 +54,8 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private Color bombNormalColor = Color.white;
     [SerializeField] private Color bombEmptyColor;
     [SerializeField] private TextMeshProUGUI creditText;
+    [SerializeField] private Color creditNormalColor;
+    [SerializeField] private Color creditActiveColor;
     [SerializeField] private TextMeshProUGUI weaponText;
     [SerializeField] private TextMeshProUGUI upgradePopupText;
     [SerializeField] private float upgradePopupDuration = 1.5f;
@@ -547,6 +549,7 @@ public class PlayerController : MonoBehaviour
         if (creditText != null)
         {
             creditText.text = $"Crediti: {currentCredits}";
+            creditText.color = currentCredits > 0 ? creditActiveColor : creditNormalColor;
         }
     }
 
