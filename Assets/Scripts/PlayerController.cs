@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 using TMPro;
 
 [RequireComponent(typeof(Rigidbody2D))]
@@ -50,12 +51,16 @@ public class PlayerController : MonoBehaviour
     [Header("UI")]
     [SerializeField] private TextMeshProUGUI healthText;
     [SerializeField] private TextMeshProUGUI bombText;
+    [SerializeField] private Color bombNormalColor = Color.white;
+    [SerializeField] private Color bombEmptyColor;
     [SerializeField] private TextMeshProUGUI creditText;
     [SerializeField] private TextMeshProUGUI weaponText;
     [SerializeField] private TextMeshProUGUI upgradePopupText;
     [SerializeField] private float upgradePopupDuration = 1.5f;
     [SerializeField] private Transform healthIconContainer;
     [SerializeField] private GameObject healthIconPrefab;
+    [SerializeField] private Sprite fullHeartSprite;
+    [SerializeField] private Sprite emptyHeartSprite;
 
     [Header("Feedback")]
     [SerializeField] private Transform meleeVisual;
@@ -502,9 +507,24 @@ public class PlayerController : MonoBehaviour
                 Instantiate(healthIconPrefab, healthIconContainer);
             }
 
+            // Con entrambi gli sprite le icone restano tutte visibili e cambiano
+            // faccia: i cuori vuoti fanno vedere quanta vita manca. Senza, si
+            // ripiega sullo spegnimento, che non richiede nessuna grafica
+            bool useSprites = fullHeartSprite != null && emptyHeartSprite != null;
+
             for (int i = 0; i < healthIconContainer.childCount; i++)
             {
-                healthIconContainer.GetChild(i).gameObject.SetActive(i < currentHealth);
+                Transform icon = healthIconContainer.GetChild(i);
+                Image image = useSprites ? icon.GetComponent<Image>() : null;
+
+                if (image == null)
+                {
+                    icon.gameObject.SetActive(i < currentHealth);
+                    continue;
+                }
+
+                icon.gameObject.SetActive(true);
+                image.sprite = i < currentHealth ? fullHeartSprite : emptyHeartSprite;
             }
         }
         else if (healthText != null)
@@ -517,8 +537,8 @@ public class PlayerController : MonoBehaviour
 {
     if (bombText != null)
     {
-        bombText.color = currentBombs > 0 ? Color.white : Color.red;
         bombText.text = $"Bombe: {currentBombs}";
+        bombText.color = currentBombs > 0 ? bombNormalColor : bombEmptyColor;
     }
 }
 
