@@ -250,18 +250,57 @@ public class DungeonGenerator : MonoBehaviour
         return Mathf.Abs(to.x - from.x) + Mathf.Abs(to.y - from.y);
     }
 
+    // La distanza di Manhattan ignora la forma del dungeon: in un layout a L la
+    // cella con le coordinate più lontane può stare a pochi passi dalla partenza,
+    // mentre il fondo del ramo lungo è molto più avanti. Questa visita in ampiezza
+    // misura i passi veri sull'adiacenza fra celle occupate e tiene il massimo.
+    //
+    // A parità di passi vince un vicolo cieco (una sola cella vicina occupata),
+    // così il boss finisce in fondo a un ramo invece che su un incrocio di
+    // passaggio. Se a distanza massima non c'è nessun vicolo cieco si tiene
+    // comunque la cella più lontana: la stanza boss deve esserci sempre.
+    //
+    // L'adiacenza è quella della griglia e non connections, che qui è ancora
+    // vuota: vale la stessa approssimazione di CellsReachableWithoutBoss.
     private static Vector2Int FarthestCell(List<Vector2Int> cells, Vector2Int from)
     {
+        HashSet<Vector2Int> occupied = new HashSet<Vector2Int>(cells);
+        if (!occupied.Contains(from)) return from;
+
+        Dictionary<Vector2Int, int> distances = new Dictionary<Vector2Int, int> { { from, 0 } };
+
+        Queue<Vector2Int> frontier = new Queue<Vector2Int>();
+        frontier.Enqueue(from);
+
         Vector2Int farthest = from;
-        int maxDistance = -1;
+        int maxDistance = 0;
+        bool farthestIsDeadEnd = false;
 
-        foreach (Vector2Int cell in cells)
+        while (frontier.Count > 0)
         {
-            int distance = Distance(from, cell);
-            if (distance <= maxDistance) continue;
+            Vector2Int cell = frontier.Dequeue();
+            int distance = distances[cell];
+            bool isDeadEnd = CountOccupiedNeighbours(occupied, cell) == 1;
 
-            maxDistance = distance;
-            farthest = cell;
+            // La coda esce in ordine di distanza crescente, quindi a parità di
+            // passi si sostituisce solo per passare da un incrocio a un vicolo cieco
+            if (distance > maxDistance || (distance == maxDistance && isDeadEnd && !farthestIsDeadEnd))
+            {
+                farthest = cell;
+                maxDistance = distance;
+                farthestIsDeadEnd = isDeadEnd;
+            }
+
+            foreach (DoorTrigger.Direction direction in AllDirections)
+            {
+                Vector2Int next = cell + OffsetOf(direction);
+
+                if (!occupied.Contains(next)) continue;
+                if (distances.ContainsKey(next)) continue;
+
+                distances[next] = distance + 1;
+                frontier.Enqueue(next);
+            }
         }
 
         return farthest;
