@@ -10,6 +10,7 @@ Library: /home/lore/Documents/GitHub/Progetto-Mobile-Computing/Temp/BurstOutput/
 --target-framework=NetFramework
 --generate-link-xml=Temp/burst.link.xml
 --temp-folder=/home/lore/Documents/GitHub/Progetto-Mobile-Computing/Temp/Burst
+--debug=Full
 --enable-frame-info-registration
 --key-folder=/home/lore/Unity/Hub/Editor/6000.3.10f1/Editor/Data/PlaybackEngines/LinuxStandaloneSupport
 --decode-folder=/home/lore/Documents/GitHub/Progetto-Mobile-Computing/Library/Burst
@@ -53,6 +54,7 @@ Library: /home/lore/Documents/GitHub/Progetto-Mobile-Computing/Temp/BurstOutput/
 --target-framework=NetFramework
 --generate-link-xml=Temp/burst.link.xml
 --temp-folder=/home/lore/Documents/GitHub/Progetto-Mobile-Computing/Temp/Burst
+--debug=Full
 --enable-frame-info-registration
 --key-folder=/home/lore/Unity/Hub/Editor/6000.3.10f1/Editor/Data/PlaybackEngines/LinuxStandaloneSupport
 --decode-folder=/home/lore/Documents/GitHub/Progetto-Mobile-Computing/Library/Burst
@@ -96,6 +98,7 @@ Library: /home/lore/Documents/GitHub/Progetto-Mobile-Computing/Temp/BurstOutput/
 --target-framework=NetFramework
 --generate-link-xml=Temp/burst.link.xml
 --temp-folder=/home/lore/Documents/GitHub/Progetto-Mobile-Computing/Temp/Burst
+--debug=Full
 --enable-frame-info-registration
 --key-folder=/home/lore/Unity/Hub/Editor/6000.3.10f1/Editor/Data/PlaybackEngines/LinuxStandaloneSupport
 --decode-folder=/home/lore/Documents/GitHub/Progetto-Mobile-Computing/Library/Burst
@@ -213,6 +216,7 @@ Library: /home/lore/Documents/GitHub/Progetto-Mobile-Computing/Temp/BurstOutput/
 --target-framework=NetFramework
 --generate-link-xml=Temp/burst.link.xml
 --temp-folder=/home/lore/Documents/GitHub/Progetto-Mobile-Computing/Temp/Burst
+--debug=Full
 --enable-frame-info-registration
 --key-folder=/home/lore/Unity/Hub/Editor/6000.3.10f1/Editor/Data/PlaybackEngines/LinuxStandaloneSupport
 --decode-folder=/home/lore/Documents/GitHub/Progetto-Mobile-Computing/Library/Burst
@@ -332,6 +336,7 @@ Library: /home/lore/Documents/GitHub/Progetto-Mobile-Computing/Temp/BurstOutput/
 --float-mode=Fast
 --generate-link-xml=Temp/burst.link.xml
 --temp-folder=/home/lore/Documents/GitHub/Progetto-Mobile-Computing/Temp/Burst
+--debug=Full
 --enable-frame-info-registration
 --key-folder=/home/lore/Unity/Hub/Editor/6000.3.10f1/Editor/Data/PlaybackEngines/LinuxStandaloneSupport
 --decode-folder=/home/lore/Documents/GitHub/Progetto-Mobile-Computing/Library/Burst
@@ -353,6 +358,7 @@ Library: /home/lore/Documents/GitHub/Progetto-Mobile-Computing/Temp/BurstOutput/
 --float-mode=Fast
 --generate-link-xml=Temp/burst.link.xml
 --temp-folder=/home/lore/Documents/GitHub/Progetto-Mobile-Computing/Temp/Burst
+--debug=Full
 --enable-frame-info-registration
 --key-folder=/home/lore/Unity/Hub/Editor/6000.3.10f1/Editor/Data/PlaybackEngines/LinuxStandaloneSupport
 --decode-folder=/home/lore/Documents/GitHub/Progetto-Mobile-Computing/Library/Burst

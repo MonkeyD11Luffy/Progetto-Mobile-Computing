@@ -20,14 +20,14 @@ public class Account
 
 // JsonUtility non serializza né i dizionari né una List<T> passata come radice:
 // serve un oggetto contenitore con la lista come campo.
+//
+// Qui dentro finiscono solo gli account: la sessione non è un dato salvato.
+// L'account collegato vive in un campo di AccountManager e muore con il gioco,
+// quindi al riavvio non risulta connesso nessuno.
 [Serializable]
 public class AccountDatabase
 {
     public List<Account> accounts = new List<Account>();
-
-    // Email dell'ultimo accesso: al riavvio la sessione riparte da qui senza
-    // richiedere la password. Solo l'email — mai la password, in chiaro o no.
-    public string lastLoggedInEmail;
 }
 
 // Quello che la classifica ha il diritto di vedere: il nome e il punteggio.
@@ -111,24 +111,6 @@ public class AccountManager : MonoBehaviour
 
         filePath = Path.Combine(Application.persistentDataPath, FileName);
         Load();
-        RestoreSession();
-    }
-
-    // La sessione salvata vale solo se l'account esiste ancora: un file
-    // modificato a mano potrebbe puntare a un account cancellato.
-    private void RestoreSession()
-    {
-        string saved = Normalize(database.lastLoggedInEmail);
-
-        if (string.IsNullOrEmpty(saved)) return;
-
-        if (FindAccount(saved) == null)
-        {
-            database.lastLoggedInEmail = string.Empty;
-            return;
-        }
-
-        currentEmail = saved;
     }
 
     // ---------------------------------------------------------------- account
@@ -161,6 +143,7 @@ public class AccountManager : MonoBehaviour
         };
 
         database.accounts.Add(account);
+        Save();
         SetSession(normalized);
 
         return RegisterResult.Success;
@@ -181,20 +164,18 @@ public class AccountManager : MonoBehaviour
         return LoginResult.Success;
     }
 
+    // Chiude la sessione senza toccare il file: l'account resta registrato con
+    // il suo record, è solo il collegamento a cadere.
     public void Logout()
     {
         currentEmail = null;
-        database.lastLoggedInEmail = string.Empty;
-        Save();
     }
 
-    // Un solo punto in cui la sessione cambia: la memoria e il file restano
-    // allineati, e chi riapre il gioco ritrova l'ultimo account collegato.
+    // Un solo punto in cui la sessione cambia. Non salva niente: la sessione sta
+    // in memoria e basta, e il file va scritto solo quando cambiano gli account.
     private void SetSession(string normalizedEmail)
     {
         currentEmail = normalizedEmail;
-        database.lastLoggedInEmail = normalizedEmail;
-        Save();
     }
 
     // ----------------------------------------------------------------- record
@@ -252,6 +233,12 @@ public class AccountManager : MonoBehaviour
         try
         {
             string json = File.ReadAllText(filePath);
+
+            // I file scritti prima che la sessione smettesse di essere salvata
+            // hanno in più un campo "lastLoggedInEmail": FromJson ignora i campi
+            // che la classe non dichiara, quindi si leggono ancora e gli account
+            // che contengono restano in classifica. Il campo sparisce dal file al
+            // primo salvataggio.
             database = JsonUtility.FromJson<AccountDatabase>(json) ?? new AccountDatabase();
 
             // FromJson su un JSON valido ma di forma diversa lascia il campo a null
