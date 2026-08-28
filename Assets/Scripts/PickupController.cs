@@ -26,7 +26,7 @@ public class PickupController : MonoBehaviour
     [SerializeField] private float speedIncrease = 1f;
     [SerializeField] private float fireRateIncrease = 0.05f;
     [SerializeField] private float healthRegenChanceIncrease = 0.15f;
-    [SerializeField] private int contactDamageReductionIncrease = 1;
+    [SerializeField] private int armorPickupIncrease = 1;
     [SerializeField] private float meleeArcIncrease = 0.15f;
     [SerializeField] private int projectileBounceIncrease = 1;
 
@@ -99,7 +99,7 @@ public class PickupController : MonoBehaviour
                 break;
 
             case PickupType.ArmorUp:
-                player.IncreaseContactDamageReduction(contactDamageReductionIncrease);
+                player.AddArmorPickup(armorPickupIncrease);
                 break;
 
             case PickupType.MeleeArcUp:

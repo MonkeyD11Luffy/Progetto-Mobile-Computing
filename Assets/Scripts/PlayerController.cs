@@ -34,9 +34,10 @@ public class PlayerController : MonoBehaviour
     [Header("Vita")]
     [SerializeField] private int maxHealth = 6;
     [SerializeField] private float invulnerabilityDuration = 0.5f;
+    [SerializeField] private float armorInvulnerabilityBonus = 0.5f;
+    [SerializeField] private float maxInvulnerabilityDuration = 2f;
     [SerializeField] private float healthRegenInterval = 5f;
     [SerializeField] private float healthRegenChance = 0f;
-    [SerializeField] private int contactDamageReduction = 0;
 
     [Header("Potenziamenti Sparo")]
     [SerializeField] private int projectileBounces = 0;
@@ -424,12 +425,18 @@ public class PlayerController : MonoBehaviour
     }
 }
 
+    // Pickup armatura raccolti: sola lettura da fuori, cresce solo con AddArmorPickup
+    public int ArmorPickups { get; private set; }
+
+    // Ogni armatura allunga i frame di immunità post-colpo, con un tetto oltre il
+    // quale il player resterebbe intoccabile per quasi tutta la stanza
+    private float EffectiveInvulnerabilityDuration =>
+        Mathf.Min(invulnerabilityDuration + ArmorPickups * armorInvulnerabilityBonus,
+                  maxInvulnerabilityDuration);
+
     public void TakeContactDamage(int amount)
     {
-        int reduced = Mathf.Max(0, amount - contactDamageReduction);
-        if (reduced <= 0) return;
-
-        TakeDamage(reduced);
+        TakeDamage(amount);
     }
 
     public void TakeDamage(int amount)
@@ -446,7 +453,7 @@ public class PlayerController : MonoBehaviour
     PlayHitFlash();
 
     isInvulnerable = true;
-    invulnerabilityTimer = invulnerabilityDuration;
+    invulnerabilityTimer = EffectiveInvulnerabilityDuration;
 
     if (currentHealth <= 0)
     {
@@ -600,9 +607,9 @@ public class PlayerController : MonoBehaviour
         healthRegenChance = Mathf.Clamp01(healthRegenChance + amount);
     }
 
-    public void IncreaseContactDamageReduction(int amount)
+    public void AddArmorPickup(int amount)
     {
-        contactDamageReduction += amount;
+        ArmorPickups += amount;
     }
 
     public void WidenMeleeArc(float amount)
