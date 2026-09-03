@@ -12,13 +12,13 @@ public class EnemyProjectileController : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        if (other.CompareTag("Player"))
+        // Il player si riconosce dal componente, non dal tag: cosi' viene
+        // intercettato anche quando il collider colpito e' un figlio (la
+        // hurtbox), che il tag "Player" non ce l'ha.
+        PlayerController playerController = other.GetComponentInParent<PlayerController>();
+        if (playerController != null)
         {
-            PlayerController playerController = other.GetComponent<PlayerController>();
-            if (playerController != null)
-            {
-                playerController.TakeDamage(damage);
-            }
+            playerController.TakeDamage(damage);
             Destroy(gameObject);
             return;
         }

@@ -66,14 +66,13 @@ public class BombController : MonoBehaviour
                 secretWall.Reveal();
             }
 
-            // Danneggia il player se troppo vicino
-            if (hit.CompareTag("Player"))
+            // Danneggia il player se troppo vicino. Riconosciuto dal componente
+            // e non dal tag, per intercettarlo anche quando il collider preso
+            // dall'overlap e' un figlio (la hurtbox) invece della radice.
+            PlayerController playerController = hit.GetComponentInParent<PlayerController>();
+            if (playerController != null)
             {
-                PlayerController playerController = hit.GetComponent<PlayerController>();
-                if (playerController != null)
-                {
-                    playerController.TakeDamage(explosionDamage);
-                }
+                playerController.TakeDamage(explosionDamage);
             }
 
             // Danneggia i nemici (Walker, Turret, Miniboss - tutti taggati "Enemy")

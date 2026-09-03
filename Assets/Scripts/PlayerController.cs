@@ -441,6 +441,10 @@ public class PlayerController : MonoBehaviour
         Mathf.Min(invulnerabilityDuration + ArmorPickups * armorInvulnerabilityBonus,
                   maxInvulnerabilityDuration);
 
+    // Punto d'ingresso del danno da contatto con i nemici: lo chiamano sia
+    // EnemyBase (collisione con il collider della radice) sia PlayerHurtbox
+    // (trigger sul collider figlio dedicato). Passa da TakeDamage, quindi
+    // invulnerabilita', scudo e bonus dell'armatura valgono in entrambi i casi.
     public void TakeContactDamage(int amount)
     {
         TakeDamage(amount);

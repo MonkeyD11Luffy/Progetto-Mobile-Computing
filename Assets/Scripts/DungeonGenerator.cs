@@ -23,6 +23,22 @@ public class DungeonGenerator : MonoBehaviour
     [SerializeField] private GameObject shopRoomPrefab;
     // Tinta del muro sfondabile: unico indizio che dietro c'è qualcosa
     [SerializeField] private Color secretWallTint = new Color(0.85f, 0.85f, 0.9f, 1f);
+    // Segnaposto opzionale appeso al muro sfondabile: se assegnato si aggiunge
+    // alla tinta, che resta comunque applicata
+    [SerializeField] private GameObject secretWallMarkerPrefab;
+    // Varco mostrato dopo l'esplosione. Vive qui e non nel SecretWall perché
+    // quel componente è aggiunto a runtime e non è configurabile
+    // nell'Inspector: glielo passa CreateSecretWall, spento
+    [SerializeField] private GameObject secretDoorPrefab;
+    // Quanto il varco sta oltre il semilato calpestabile, cioè lo spessore del
+    // muro su cui si apre. Uno per lato: i muri non hanno lo stesso spessore su
+    // tutti e quattro i lati, così ogni varco si posa sul proprio
+    [SerializeField] private float secretDoorDistanceNorth = 0.5f;
+    [SerializeField] private float secretDoorDistanceSouth = 0.5f;
+    [SerializeField] private float secretDoorDistanceEast = 0.5f;
+    [SerializeField] private float secretDoorDistanceWest = 0.5f;
+    // Ripiego per una stanza senza RoomBounds: stessi default del componente
+    private const float DefaultRoomHalfSize = 4f;
     [SerializeField] private int roomCount = 8;
     [SerializeField] private int gridSize = 9;
 
@@ -658,11 +674,62 @@ public class DungeonGenerator : MonoBehaviour
         SpriteRenderer sr = wall.GetComponent<SpriteRenderer>();
         if (sr != null) sr.color = secretWallTint;
 
+        if (secretWallMarkerPrefab != null)
+        {
+            Instantiate(secretWallMarkerPrefab, wall.position, Quaternion.identity, wall);
+        }
+
         // Se il prefab avesse già dichiarato un muro segreto lì, si riusa quello
         SecretWall secretWall = wall.GetComponent<SecretWall>();
         if (secretWall == null) secretWall = wall.gameObject.AddComponent<SecretWall>();
 
+        // Solo se assegnato: un muro segreto già dichiarato in un prefab
+        // manterrebbe così il proprio varco invece di vederselo azzerare
+        if (secretDoorPrefab != null)
+        {
+            // Figlio della stanza e non del muro: posizione e rotazione sono
+            // locali alla stanza e ricavate dal lato, non copiate dal muro
+            GameObject secretDoor = Instantiate(secretDoorPrefab, room.transform, false);
+            secretDoor.transform.localPosition = SecretDoorLocalPosition(room, direction);
+            secretDoor.transform.localRotation = Quaternion.Euler(0f, 0f, SecretDoorAngle(direction));
+            secretDoor.SetActive(false); // lo accende Reveal(), dopo l'esplosione
+            secretWall.SetRevealedObject(secretDoor);
+        }
+
         return secretWall;
+    }
+
+    // Il varco va sul lato scelto, appena oltre lo spazio calpestabile: la
+    // distanza è il semilato dichiarato dal RoomBounds della stanza più il
+    // valore del lato corrispondente. Il semilato è letto dalla stanza e non
+    // fissato, così Boss_Room e MiniBoss_Room, che sono più grandi, mettono
+    // comunque il varco sul proprio muro.
+    private Vector3 SecretDoorLocalPosition(GameObject room, DoorTrigger.Direction direction)
+    {
+        RoomBounds bounds = room.GetComponentInChildren<RoomBounds>();
+
+        float halfWidth = bounds != null ? bounds.HalfWidth : DefaultRoomHalfSize;
+        float halfHeight = bounds != null ? bounds.HalfHeight : DefaultRoomHalfSize;
+
+        switch (direction)
+        {
+            case DoorTrigger.Direction.North: return new Vector3(0f, halfHeight + secretDoorDistanceNorth, 0f);
+            case DoorTrigger.Direction.South: return new Vector3(0f, -(halfHeight + secretDoorDistanceSouth), 0f);
+            case DoorTrigger.Direction.East: return new Vector3(halfWidth + secretDoorDistanceEast, 0f, 0f);
+            default: return new Vector3(-(halfWidth + secretDoorDistanceWest), 0f, 0f);
+        }
+    }
+
+    // Rotazione sull'asse Z: il varco è disegnato rivolto a nord
+    private static float SecretDoorAngle(DoorTrigger.Direction direction)
+    {
+        switch (direction)
+        {
+            case DoorTrigger.Direction.North: return 0f;
+            case DoorTrigger.Direction.South: return 180f;
+            case DoorTrigger.Direction.East: return -90f;
+            default: return 90f;
+        }
     }
 
     // Il muro da sfondare è il più esterno nella direzione scelta. Si riconosce

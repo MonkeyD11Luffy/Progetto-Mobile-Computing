@@ -1805,7 +1805,7 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0, y: 0.25}
+  m_Offset: {x: 0, y: -0.2}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.375}
@@ -1815,7 +1815,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 0.875, y: 1.45}
+  m_Size: {x: 0.6, y: 0.5}
   m_EdgeRadius: 0
 --- !u!50 &539440562
 Rigidbody2D:
@@ -1891,7 +1891,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 10
+  m_SortingOrder: 0
   m_MaskInteraction: 0
   m_Sprite: {fileID: -2694857660209894695, guid: 07a650ad538ae6872b2b581117887d6e, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -1919,6 +1919,7 @@ Transform:
   - {fileID: 902924139}
   - {fileID: 67214885}
   - {fileID: 1705492584}
+  - {fileID: 1208101701}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &539440565
@@ -3674,6 +3675,98 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1203213797}
   m_CullTransparentMesh: 1
+--- !u!1 &1208101700
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1208101701}
+  - component: {fileID: 1208101702}
+  - component: {fileID: 1208101703}
+  m_Layer: 0
+  m_Name: HurtBox
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1208101701
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1208101700}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 539440564}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!61 &1208101702
+BoxCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1208101700}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 1
+  m_UsedByEffector: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
+  m_Offset: {x: 0, y: 0.4}
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0, y: 0}
+    oldSize: {x: 0, y: 0}
+    newSize: {x: 0, y: 0}
+    adaptiveTilingThreshold: 0
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  m_Size: {x: 0.7, y: 0.8}
+  m_EdgeRadius: 0
+--- !u!114 &1208101703
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1208101700}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9623c4b3cb5de795590bfd6c59c81dfe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerHurtbox
+  contactDamage: 1
 --- !u!1 &1235825167
 GameObject:
   m_ObjectHideFlags: 0
@@ -4821,8 +4914,14 @@ MonoBehaviour:
   secretRoomPrefab: {fileID: 427882580710972496, guid: 46775a35c75be5f6ea89c1fea9a946ef, type: 3}
   treasureRoomPrefab: {fileID: 427882580710972496, guid: a102698f197cfe61d8935bbf5392703a, type: 3}
   shopRoomPrefab: {fileID: 427882580710972496, guid: 0cb3d62e2e188e986b0fec1d297d58b5, type: 3}
-  secretWallTint: {r: 0.85, g: 0.85, b: 0.9, a: 1}
-  roomCount: 16
+  secretWallTint: {r: 1, g: 1, b: 1, a: 0}
+  secretWallMarkerPrefab: {fileID: 2306799347779858037, guid: 3e65b368321ad4ff7bb38bc1c0d2e579, type: 3}
+  secretDoorPrefab: {fileID: 3510329830330713520, guid: e4c1d9fed08ceef5dba85e680f1b7fed, type: 3}
+  secretDoorDistanceNorth: -0.5
+  secretDoorDistanceSouth: 0.5
+  secretDoorDistanceEast: 0.5
+  secretDoorDistanceWest: 0.5
+  roomCount: 8
   gridSize: 9
   enemyPrefabs:
   - {fileID: 8068514365202342125, guid: 27a5945b75ba9a124a96c016f0b75f5f, type: 3}
@@ -5583,7 +5682,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &2104406495
 RectTransform:
   m_ObjectHideFlags: 0
