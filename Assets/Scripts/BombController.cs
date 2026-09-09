@@ -17,13 +17,30 @@ public class BombController : MonoBehaviour
 
     private SpriteRenderer sr;
     private float timer;
+    private bool started;
 
     private void Start()
     {
+        started = true;
+
         Invoke(nameof(Explode), fuseTime);
 
         sr = GetComponent<SpriteRenderer>();
         timer = fuseTime;
+    }
+
+    private void OnEnable()
+    {
+        // Alla prima attivazione Start() non e' ancora passato: e' lui a
+        // schedulare l'Invoke, qui lo rimettiamo solo dopo una riattivazione
+        if (!started) return;
+
+        if (timer > 0f) Invoke(nameof(Explode), timer);
+    }
+
+    private void OnDisable()
+    {
+        CancelInvoke(nameof(Explode));
     }
 
     private void Update()

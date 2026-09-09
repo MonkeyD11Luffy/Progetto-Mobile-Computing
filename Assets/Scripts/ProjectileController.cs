@@ -19,6 +19,17 @@ public class ProjectileController : MonoBehaviour
         Destroy(gameObject, lifetime);
     }
 
+    // Il proiettile e' figlio della stanza: quando ActivateOnly la spegne al
+    // cambio stanza verrebbe congelato a mezz'aria invece di sparire.
+    // La guardia su scene.isLoaded evita che scatti all'uscita dal Play mode
+    // o durante lo scaricamento della scena.
+    private void OnDisable()
+    {
+        if (!gameObject.scene.isLoaded) return;
+
+        Destroy(gameObject);
+    }
+
     public void SetDamage(int amount)
     {
         damage = amount;

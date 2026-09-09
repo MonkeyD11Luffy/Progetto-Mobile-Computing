@@ -67,6 +67,7 @@ public class PlayerController : MonoBehaviour
     [Header("Feedback")]
     [SerializeField] private Transform meleeVisual;
     [SerializeField] private float meleeVisualDuration = 0.1f;
+    [SerializeField] private float meleeVisualDistance = 0.7f;
     [SerializeField] private PlayerVisuals playerVisuals;
 
 
@@ -383,7 +384,7 @@ public class PlayerController : MonoBehaviour
     private System.Collections.IEnumerator ShowMeleeVisual(Vector2 direction)
     {
         meleeVisual.rotation = Quaternion.Euler(0, 0, VectorUtils.ToAngle(direction));
-        meleeVisual.localPosition = direction * 0.7f;
+        meleeVisual.localPosition = direction * meleeVisualDistance;
 
         meleeVisual.gameObject.SetActive(true);
         yield return new WaitForSeconds(meleeVisualDuration);
@@ -693,4 +694,22 @@ public class PlayerController : MonoBehaviour
 
     // La usa PlayerAbilities per la stessa guardia che c'è in cima a Update()
     public bool IsDead => isDead;
+
+    // Mostra la portata del corpo a corpo mentre lavori in editor (solo Scene view)
+    private void OnDrawGizmosSelected()
+    {
+        Gizmos.color = new Color(1f, 1f, 0f, 0.4f);
+        Gizmos.DrawWireSphere(transform.position, meleeRange);
+
+        // meleeArc e' una soglia sul prodotto scalare: l'arcocoseno la
+        // riconverte nel semiangolo dello spicchio colpito
+        float halfAngle = Mathf.Acos(Mathf.Clamp(meleeArc, -1f, 1f)) * Mathf.Rad2Deg;
+
+        // Vector3.right come direzione di riferimento, coerente con VectorUtils.ToAngle (0 = destra)
+        Vector3 edgeA = Quaternion.Euler(0, 0, halfAngle) * Vector3.right * meleeRange;
+        Vector3 edgeB = Quaternion.Euler(0, 0, -halfAngle) * Vector3.right * meleeRange;
+
+        Gizmos.DrawLine(transform.position, transform.position + edgeA);
+        Gizmos.DrawLine(transform.position, transform.position + edgeB);
+    }
 }

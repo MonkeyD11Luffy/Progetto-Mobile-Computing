@@ -31,6 +31,10 @@ public class AudioManager : MonoBehaviour
     [Header("Variazione")]
     [SerializeField] private float pitchVariation = 0.1f;
 
+    // Moltiplicatore applicato a tutto l'audio: lo muove SlowTime, che abbassa
+    // il pitch di musica ed effetti insieme al timeScale
+    private float globalPitch = 1f;
+
     // Volume di regime della musica: è quello impostato sulla sorgente
     // nell'Inspector, letto una volta sola perché le dissolvenze lo alterano
     private float musicVolume;
@@ -58,7 +62,7 @@ public class AudioManager : MonoBehaviour
         if (clip == null || sfxSource == null) return;
 
         // Piccola variazione di pitch: evita che il suono ripetuto diventi fastidioso
-        sfxSource.pitch = 1f + Random.Range(-pitchVariation, pitchVariation);
+        sfxSource.pitch = (1f + Random.Range(-pitchVariation, pitchVariation)) * globalPitch;
         sfxSource.PlayOneShot(clip, volume);
     }
 
@@ -72,10 +76,18 @@ public class AudioManager : MonoBehaviour
     public void PlayExplosion() => PlaySfx(explosionClip);
     public void PlayPickup() => PlaySfx(pickupClip);
 
-    public void PlayDash() => PlaySfx(dashClip, 0.6f);
+    public void PlayDash() => PlaySfx(dashClip, 0.45f);
     public void PlayShockwave() => PlaySfx(shockwaveClip, 0.8f);
     public void PlaySlowTime() => PlaySfx(slowTimeClip, 0.7f);
-    public void PlayShield() => PlaySfx(shieldClip, 0.7f);
+    public void PlayShield() => PlaySfx(shieldClip, 0.6f);
+
+    // La musica cambia pitch subito; gli effetti lo leggono al prossimo PlaySfx
+    public void SetGlobalPitch(float pitch)
+    {
+        globalPitch = pitch;
+
+        if (musicSource != null) musicSource.pitch = pitch;
+    }
 
     // Cambia traccia con una dissolvenza. Con clip a null la musica sfuma
     // fino a fermarsi. Chiedere la traccia già in riproduzione non fa nulla:

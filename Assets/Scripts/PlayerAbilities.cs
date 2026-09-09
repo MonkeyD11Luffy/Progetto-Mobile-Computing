@@ -431,6 +431,8 @@ public class PlayerAbilities : MonoBehaviour
         // e il rallentamento risulta a scatti
         Time.fixedDeltaTime = defaultFixedDeltaTime * slowFactor;
 
+        if (AudioManager.Instance != null) AudioManager.Instance.SetGlobalPitch(slowFactor);
+
         // Il player si muove a velocità normale: è il resto del mondo a
         // rallentare, ed è questo che rende l'abilità utile invece che simmetrica
         player.SetAbilitySpeedMultiplier(1f / slowFactor);
@@ -450,6 +452,7 @@ public class PlayerAbilities : MonoBehaviour
         if (slowTimeOverlay != null) slowTimeOverlay.SetActive(false);
 
         Time.fixedDeltaTime = defaultFixedDeltaTime;
+        if (AudioManager.Instance != null) AudioManager.Instance.SetGlobalPitch(1f);
 
         if (player != null) player.ClearAbilitySpeedMultiplier();
 
